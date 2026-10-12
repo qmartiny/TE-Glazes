@@ -3,17 +3,17 @@ import type {
   AuthUser,
   Combo,
   ComboInput,
-  FacetRow,
   Firing,
   Photo,
   Profile,
+  ResultSummary,
 } from '../../types';
-import { LAYER_FILTER_KEYS } from '../filters';
 import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 
 const BUCKET = 'photos';
 const COMBO_SELECT = '*, author:profiles(id, display_name, studio)';
+const RESULT_SELECT = 'id, user_id, title, clay, firing, layers, photos, is_private, created_at';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ProfileRow {
@@ -38,6 +38,11 @@ interface ComboRow {
   updated_at: string;
   author: Pick<ProfileRow, 'id' | 'display_name' | 'studio'> | null;
 }
+
+type ResultRow = Pick<
+  ComboRow,
+  'id' | 'user_id' | 'title' | 'clay' | 'firing' | 'layers' | 'photos' | 'is_private' | 'created_at'
+>;
 
 function toProfile(row: ProfileRow): Profile {
   return {
@@ -172,23 +177,35 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       return toProfile(row as ProfileRow);
     },
 
-    async listCombos(filters, offset, limit) {
-      let query = sb
-        .from('combinations')
-        .select(COMBO_SELECT)
-        .order('created_at', { ascending: false })
-        .range(offset, offset + limit); // one extra row tells us if there's another page
-      if (filters.clay) query = query.eq('clay', filters.clay);
-      if (filters.firing) query = query.eq('firing', filters.firing);
-      if (filters.user) {
-        if (!UUID_RE.test(filters.user)) return { items: [], hasMore: false };
-        query = query.eq('user_id', filters.user);
+    async listResults() {
+      // PostgREST returns at most 1000 rows per request, so read in pages.
+      const PAGE = 1000;
+      const rows: ResultRow[] = [];
+      for (let from = 0; ; from += PAGE) {
+        const page = check(
+          await sb
+            .from('combinations')
+            .select(RESULT_SELECT)
+            .order('created_at', { ascending: false })
+            .order('id')
+            .range(from, from + PAGE - 1),
+        ) as unknown as ResultRow[];
+        rows.push(...page);
+        if (page.length < PAGE) break;
       }
-      // jsonb containment: every requested glaze/slip/oxide must appear in some layer.
-      const wanted = LAYER_FILTER_KEYS.flatMap((type) => (filters[type] ? [{ type, name: filters[type] }] : []));
-      if (wanted.length) query = query.filter('layers', 'cs', JSON.stringify(wanted));
-      const rows = check(await query) as unknown as ComboRow[];
-      return { items: rows.slice(0, limit).map(toCombo), hasMore: rows.length > limit };
+      return rows.map(
+        (r): ResultSummary => ({
+          id: r.id,
+          userId: r.user_id,
+          title: r.title,
+          clay: r.clay,
+          firing: r.firing,
+          layers: normalizeLayers(r.layers),
+          photos: r.photos ?? [],
+          isPrivate: r.is_private,
+          createdAt: r.created_at,
+        }),
+      );
     },
 
     async getCombo(id) {
@@ -197,16 +214,11 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       return row ? toCombo(row as unknown as ComboRow) : null;
     },
 
-    async listFacetRows() {
-      const rows = check(await sb.from('combinations').select('user_id, clay, firing, layers'));
-      return (rows as Pick<ComboRow, 'user_id' | 'clay' | 'firing' | 'layers'>[]).map(
-        (r): FacetRow => ({
-          userId: r.user_id,
-          clay: r.clay,
-          firing: r.firing,
-          layers: normalizeLayers(r.layers),
-        }),
-      );
+    async getCombos(ids) {
+      const valid = ids.filter((id) => UUID_RE.test(id));
+      if (!valid.length) return [];
+      const rows = check(await sb.from('combinations').select(COMBO_SELECT).in('id', valid));
+      return (rows as unknown as ComboRow[]).map(toCombo);
     },
 
     async createCombo(userId, input) {

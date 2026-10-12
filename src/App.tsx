@@ -19,6 +19,7 @@ const router = createHashRouter([
     children: [
       { index: true, element: <BrowsePage /> },
       { path: 'c/:id', element: <ComboPage /> },
+      { path: 'combo/:key', element: <ComboPage /> },
       {
         path: 'c/:id/edit',
         element: (

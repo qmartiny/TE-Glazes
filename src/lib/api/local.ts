@@ -1,5 +1,4 @@
-import type { AuthUser, Combo, FacetRow, Profile } from '../../types';
-import { matchesFilters } from '../filters';
+import type { AuthUser, Combo, Profile, ResultSummary } from '../../types';
 import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 import { DEMO_PROFILES, demoCombos } from './demoSeed';
@@ -207,15 +206,25 @@ export function createLocalBackend(): Backend {
       });
     },
 
-    async listCombos(filters, offset, limit) {
+    async listResults() {
       const s = await getState();
-      const rows = visible(s)
-        .filter((c) => matchesFilters(c, filters))
-        .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-      return {
-        items: rows.slice(offset, offset + limit).map((c) => withAuthor(s, c)),
-        hasMore: rows.length > offset + limit,
-      };
+      return structuredClone(
+        visible(s)
+          .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+          .map(
+            (c): ResultSummary => ({
+              id: c.id,
+              userId: c.userId,
+              title: c.title,
+              clay: c.clay,
+              firing: c.firing,
+              layers: c.layers,
+              photos: c.photos,
+              isPrivate: c.isPrivate,
+              createdAt: c.createdAt,
+            }),
+          ),
+      );
     },
 
     async getCombo(id) {
@@ -224,11 +233,12 @@ export function createLocalBackend(): Backend {
       return c ? withAuthor(s, c) : null;
     },
 
-    async listFacetRows() {
+    async getCombos(ids) {
       const s = await getState();
-      return visible(s).map(
-        (c): FacetRow => ({ userId: c.userId, clay: c.clay, firing: c.firing, layers: c.layers }),
-      );
+      const wanted = new Set(ids);
+      return visible(s)
+        .filter((c) => wanted.has(c.id))
+        .map((c) => withAuthor(s, c));
     },
 
     async createCombo(userId, input) {

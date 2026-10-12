@@ -68,13 +68,14 @@ export interface ComboFilters {
   user?: string;
 }
 
-/** Lightweight row used to build filter dropdowns with counts. */
-export interface FacetRow {
-  userId: string;
-  clay: string;
-  firing: Firing;
-  layers: Layer[];
-}
+/**
+ * One member's post, without the heavy fields. Posts with the same layers in
+ * the same order are grouped into a combo (see groupResults()).
+ */
+export type ResultSummary = Pick<
+  Combo,
+  'id' | 'userId' | 'title' | 'clay' | 'firing' | 'layers' | 'photos' | 'isPrivate' | 'createdAt'
+>;
 
 export interface AuthUser {
   id: string;

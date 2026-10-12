@@ -1,27 +1,61 @@
+import { useMemo } from 'react';
 import { Link, useSearchParams } from 'react-router';
-import { useAuth } from '../auth/AuthContext';
-import { ComboList } from '../components/ComboList';
+import { CardGrid, GridSkeleton, GroupCard, LoadError } from '../components/Cards';
 import { FilterBar } from '../components/FilterBar';
 import { Icon } from '../components/Icon';
 import { APP_TAGLINE } from '../config';
 import { backend } from '../lib/api';
-import { computeFacets, filtersFromParams, hasFilters, matchesFilters, paramsFromFilters } from '../lib/filters';
+import { computeFacets, filterGroups, filtersFromParams, groupResults, hasFilters, paramsFromFilters } from '../lib/filters';
+import { useResults } from '../lib/results';
 import { useAsync } from '../lib/useAsync';
 import type { ComboFilters } from '../types';
 
 export function BrowsePage() {
   const [params, setParams] = useSearchParams();
-  const filters = filtersFromParams(params);
-  const { user } = useAuth();
-  const facetRows = useAsync(() => backend.listFacetRows(), [user?.id]);
+  const filters = useMemo(() => filtersFromParams(params), [params]);
+  const { results, error, retry } = useResults();
   const profiles = useAsync(() => backend.listProfiles(), []);
 
-  const rows = facetRows.data;
-  const facets = rows ? computeFacets(rows, filters) : null;
-  const total = rows?.filter((r) => matchesFilters(r, filters)).length;
+  const groups = useMemo(() => (results ? groupResults(results) : null), [results]);
+  const filtersKey = paramsFromFilters(filters).toString();
+  const shown = useMemo(() => (groups ? filterGroups(groups, filters) : null), [groups, filters]);
+  const facets = useMemo(() => (groups ? computeFacets(groups, filters) : null), [groups, filters]);
+  const names = useMemo(() => new Map((profiles.data ?? []).map((p) => [p.id, p.displayName])), [profiles.data]);
+
   // flushSync: apply right away so a quick second tap builds on the new filters, not the old ones.
   const setFilters = (next: ComboFilters) =>
     setParams(paramsFromFilters(next), { replace: true, flushSync: true });
+
+  let body;
+  if (error && !shown) body = <LoadError error={error} retry={retry} />;
+  else if (!shown) body = <GridSkeleton />;
+  else if (!shown.length)
+    body = hasFilters(filters) ? (
+      <div className="empty">
+        <Icon name="search_off" className="empty-icon" />
+        <p>No combos match these filters.</p>
+        <button className="btn btn-tonal" onClick={() => setFilters({})}>
+          Clear filters
+        </button>
+      </div>
+    ) : (
+      <div className="empty">
+        <Icon name="palette" className="empty-icon" />
+        <p>No combos yet. Be the first to share one!</p>
+        <Link to="/new" className="btn btn-filled">
+          <Icon name="add" /> Add a combo
+        </Link>
+      </div>
+    );
+  else
+    body = (
+      <CardGrid
+        items={shown}
+        listKey={`browse|${filtersKey}`}
+        itemKey={(item) => item.group.key}
+        render={(item) => <GroupCard group={item.group} results={item.results} names={names} />}
+      />
+    );
 
   return (
     <>
@@ -31,34 +65,12 @@ export function BrowsePage() {
       </section>
 
       <FilterBar filters={filters} facets={facets} profiles={profiles.data ?? []} onChange={setFilters} />
-      {total !== undefined && (
+      {shown && (
         <p className="result-count">
-          {total} {total === 1 ? 'combo' : 'combos'}
+          {shown.length} {shown.length === 1 ? 'combo' : 'combos'}
         </p>
       )}
-
-      <ComboList
-        filters={filters}
-        empty={
-          hasFilters(filters) ? (
-            <div className="empty">
-              <Icon name="search_off" className="empty-icon" />
-              <p>No combos match these filters.</p>
-              <button className="btn btn-tonal" onClick={() => setFilters({})}>
-                Clear filters
-              </button>
-            </div>
-          ) : (
-            <div className="empty">
-              <Icon name="palette" className="empty-icon" />
-              <p>No combos yet. Be the first to share one!</p>
-              <Link to="/new" className="btn btn-filled">
-                <Icon name="add" /> Add a combo
-              </Link>
-            </div>
-          )
-        }
-      />
+      {body}
     </>
   );
 }

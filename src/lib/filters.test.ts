@@ -1,35 +1,33 @@
 import { describe, expect, it } from 'vitest';
-import type { FacetRow, Layer } from '../types';
+import type { Firing, Layer, ResultSummary } from '../types';
 import {
   buildOptions,
   comboTitle,
   computeFacets,
+  filterGroups,
   filtersFromParams,
-  matchesFilters,
+  groupResults,
+  groupTitle,
   paramsFromFilters,
+  summarize,
 } from './filters';
 
 const glaze = (name: string, application: string | null = null): Layer => ({ type: 'glaze', name, application });
+const slip = (name: string): Layer => ({ type: 'slip', name, application: null });
+const oxide = (name: string): Layer => ({ type: 'oxide', name, application: null });
 
-const rows: FacetRow[] = [
-  { userId: 'a', clay: 'Porcelain', firing: 'reduction', layers: [glaze('Faux Celadon')] },
-  {
-    userId: 'a',
-    clay: 'Craft Crank',
-    firing: 'reduction',
-    layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')],
-  },
-  {
-    userId: 'b',
-    clay: 'Craft Crank',
-    firing: 'oxidation',
-    layers: [
-      { type: 'slip', name: 'Blue', application: 'Brushed' },
-      { type: 'oxide', name: 'Cobalt Oxide', application: null },
-      glaze('Tenmoku'),
-      glaze('Tenmoku'),
-    ],
-  },
+let n = 0;
+function result(userId: string, clay: string, firing: Firing, layers: Layer[], createdAt: string): ResultSummary {
+  return { id: `r${n++}`, userId, title: null, clay, firing, layers, photos: [], isPrivate: false, createdAt };
+}
+
+const results: ResultSummary[] = [
+  result('maya', 'Craft Crank', 'reduction', [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')], '2026-09-01'),
+  // Same layers in the same order, applied differently, different clay/firing and spelling: same combo.
+  result('sam', 'Porcelain', 'oxidation', [glaze('tenmoku ', 'Poured'), glaze('Midnight  blue')], '2026-10-01'),
+  // Reversed order is a different combo.
+  result('jo', 'Craft Crank', 'reduction', [glaze('Midnight Blue'), glaze('Tenmoku')], '2026-08-01'),
+  result('jo', 'Porcelain', 'reduction', [slip('Blue'), oxide('Cobalt Oxide'), glaze('Transparent')], '2026-07-01'),
 ];
 
 describe('URL params', () => {
@@ -42,44 +40,57 @@ describe('URL params', () => {
   });
 });
 
-describe('matchesFilters', () => {
-  it('matches a glaze in any layer', () => {
-    expect(matchesFilters(rows[1], { glaze: 'Midnight Blue' })).toBe(true);
-    expect(matchesFilters(rows[0], { glaze: 'Midnight Blue' })).toBe(false);
+describe('groupResults', () => {
+  const groups = groupResults(results);
+
+  it('groups posts with the same layers in the same order, ignoring how they were applied and spelling', () => {
+    expect(groups.map((g) => g.results.length)).toEqual([2, 1, 1]);
+    expect(groups[0].results.map((r) => r.userId)).toEqual(['sam', 'maya']); // newest first
+    expect(groupTitle(groups[1])).toBe('Midnight Blue + Tenmoku');
   });
 
-  it('matches slips and oxides by type, not just name', () => {
-    expect(matchesFilters(rows[2], { slip: 'Blue', oxide: 'Cobalt Oxide' })).toBe(true);
-    expect(matchesFilters(rows[2], { glaze: 'Blue' })).toBe(false);
-    expect(matchesFilters(rows[1], { slip: 'Blue' })).toBe(false);
+  it("names the combo after the newest post's layers, without application", () => {
+    expect(groups[0].layers).toEqual([glaze('tenmoku '), glaze('Midnight  blue')]);
+  });
+});
+
+describe('filterGroups', () => {
+  const groups = groupResults(results);
+
+  it('shows a combo when any of its results matches, with just those results', () => {
+    const shown = filterGroups(groups, { clay: 'Porcelain', firing: 'oxidation' });
+    expect(shown).toHaveLength(1);
+    expect(shown[0].results.map((r) => r.userId)).toEqual(['sam']);
   });
 
-  it('requires every filter to match', () => {
-    expect(matchesFilters(rows[1], { glaze: 'Tenmoku', firing: 'oxidation' })).toBe(false);
-    expect(matchesFilters(rows[2], { glaze: 'Tenmoku', firing: 'oxidation' })).toBe(true);
+  it('needs a single result to match clay and firing together', () => {
+    // Maya: Craft Crank + reduction; Sam: Porcelain + oxidation. Nobody did Craft Crank in oxidation.
+    expect(filterGroups(groups, { clay: 'Craft Crank', firing: 'oxidation' })).toHaveLength(0);
+  });
+
+  it('matches glazes, slips and oxides by type, ignoring case', () => {
+    expect(filterGroups(groups, { glaze: 'midnight blue' })).toHaveLength(2);
+    expect(filterGroups(groups, { slip: 'Blue', oxide: 'Cobalt Oxide' })).toHaveLength(1);
+    expect(filterGroups(groups, { glaze: 'Blue' })).toHaveLength(0);
   });
 });
 
 describe('computeFacets', () => {
-  it('counts each dimension against the other active filters', () => {
-    const facets = computeFacets(rows, { firing: 'reduction' });
-    expect(facets.glaze.get('Tenmoku')).toBe(1);
-    expect(facets.clay.get('Craft Crank')).toBe(1);
-    expect(facets.slip.get('Blue')).toBeUndefined();
-    // The firing facet ignores the firing filter itself.
+  const groups = groupResults(results);
+
+  it('counts combos, not posts', () => {
+    const facets = computeFacets(groups, {});
+    expect(facets.glaze.get('Tenmoku')).toBe(1); // the reversed combo
+    expect(facets.firing.get('reduction')).toBe(3);
     expect(facets.firing.get('oxidation')).toBe(1);
-    expect(facets.firing.get('reduction')).toBe(2);
   });
 
-  it('counts a glaze once per combo even if used in two layers', () => {
-    expect(computeFacets(rows, {}).glaze.get('Tenmoku')).toBe(2);
-  });
-
-  it('counts slips and oxides separately from glazes', () => {
-    const facets = computeFacets(rows, {});
-    expect(facets.slip.get('Blue')).toBe(1);
-    expect(facets.oxide.get('Cobalt Oxide')).toBe(1);
-    expect(facets.glaze.has('Blue')).toBe(false);
+  it('counts each dimension against the other active filters', () => {
+    const facets = computeFacets(groups, { firing: 'oxidation' });
+    expect(facets.clay.get('Porcelain')).toBe(1);
+    expect(facets.clay.has('Craft Crank')).toBe(false);
+    expect(facets.firing.get('reduction')).toBe(3); // the firing facet ignores the firing filter
+    expect(facets.slip.has('Blue')).toBe(false);
   });
 });
 
@@ -103,10 +114,15 @@ describe('buildOptions', () => {
   });
 });
 
-describe('comboTitle', () => {
-  it('falls back to the layer names', () => {
-    expect(comboTitle({ title: '  ', layers: rows[1].layers })).toBe('Tenmoku + Midnight Blue');
-    expect(comboTitle({ title: null, layers: rows[2].layers.slice(0, 3) })).toBe('Blue slip + Cobalt Oxide + Tenmoku');
-    expect(comboTitle({ title: 'Blue rim', layers: rows[1].layers })).toBe('Blue rim');
+describe('labels', () => {
+  it("uses a post's nickname, otherwise its layers", () => {
+    expect(comboTitle({ title: '  ', layers: [glaze('Tenmoku'), glaze('Midnight Blue')] })).toBe('Tenmoku + Midnight Blue');
+    expect(comboTitle({ title: null, layers: [slip('Blue'), oxide('Cobalt Oxide')] })).toBe('Blue slip + Cobalt Oxide');
+    expect(comboTitle({ title: 'Blue rim', layers: [glaze('Tenmoku')] })).toBe('Blue rim');
+  });
+
+  it('summarizes lists', () => {
+    expect(summarize(['A', 'A', 'B'])).toBe('A, B');
+    expect(summarize(['A', 'B', 'C', 'D'])).toBe('A, B +2');
   });
 });

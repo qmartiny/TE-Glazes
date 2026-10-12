@@ -17,11 +17,15 @@ const input: ComboInput = {
 
 // No IndexedDB under Node, so this exercises the in-memory fallback.
 describe('demo backend', () => {
-  it('starts with sample combos visible to everyone', async () => {
+  it('starts with sample results visible to everyone, newest first', async () => {
     const backend = createLocalBackend();
-    const page = await backend.listCombos({}, 0, 100);
-    expect(page.items.length).toBeGreaterThan(0);
-    expect(page.items.every((c) => c.author)).toBe(true);
+    const results = await backend.listResults();
+    expect(results.length).toBeGreaterThan(0);
+    const dates = results.map((r) => r.createdAt);
+    expect(dates).toEqual([...dates].sort().reverse());
+    const full = await backend.getCombos(results.slice(0, 2).map((r) => r.id));
+    expect(full).toHaveLength(2);
+    expect(full.every((c) => c.author)).toBe(true);
   });
 
   it('signs up, creates, filters, edits and deletes a combo', async () => {
@@ -38,10 +42,9 @@ describe('demo backend', () => {
 
     const created = await backend.createCombo(user!.id, input);
     expect(created.author?.displayName).toBe('Me');
-    const mine = await backend.listCombos({ user: user!.id }, 0, 10);
-    expect(mine.items.map((c) => c.id)).toEqual([created.id]);
-    const filtered = await backend.listCombos({ glaze: 'Faux Celadon', slip: 'White', clay: 'Porcelain' }, 0, 10);
-    expect(filtered.items.map((c) => c.id)).toEqual([created.id]);
+    const mine = (await backend.listResults()).filter((r) => r.userId === user!.id);
+    expect(mine.map((r) => r.id)).toEqual([created.id]);
+    expect(mine[0].layers.map((l) => l.name)).toEqual(['White', 'Faux Celadon']);
 
     const updated = await backend.updateCombo(created.id, { ...input, title: 'Pooling celadon' });
     expect(updated.title).toBe('Pooling celadon');
@@ -59,7 +62,8 @@ describe('demo backend', () => {
 
     await backend.signOut();
     expect(await backend.getCombo(secret.id)).toBeNull();
-    expect((await backend.listFacetRows()).some((r) => r.userId === a.id)).toBe(false);
+    expect((await backend.listResults()).some((r) => r.userId === a.id)).toBe(false);
+    expect(await backend.getCombos([secret.id])).toEqual([]);
 
     await backend.signUp({ email: 'b@x.com', password: 'secret1', displayName: 'B', studio: null });
     expect(await backend.getCombo(secret.id)).toBeNull();

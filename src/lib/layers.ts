@@ -17,6 +17,19 @@ export function layerLabel(layer: Pick<Layer, 'type' | 'name'>): string {
   return `${layer.name} ${layer.type}`;
 }
 
+/** Compare names ignoring case and extra spaces ("mystery  Green" = "Mystery Green"). */
+export function normName(name: string): string {
+  return name.trim().replace(/\s+/g, ' ').toLowerCase();
+}
+
+/**
+ * Identifies a combination: its layers in order, ignoring how each was applied.
+ * "Tenmoku then Midnight Blue" and "Midnight Blue then Tenmoku" are different.
+ */
+export function comboKey(layers: Pick<Layer, 'type' | 'name'>[]): string {
+  return layers.map((l) => `${l.type}:${normName(l.name)}`).join('|');
+}
+
 /**
  * Read layers from storage. Combos saved before slips and oxides existed
  * stored `{ glaze, application }`; treat those as glazes.
@@ -26,9 +39,12 @@ export function normalizeLayers(raw: unknown): Layer[] {
   return raw.flatMap((item): Layer[] => {
     if (!item || typeof item !== 'object') return [];
     const l = item as Record<string, unknown>;
-    const name = typeof l.name === 'string' ? l.name : typeof l.glaze === 'string' ? l.glaze : '';
-    if (!name) return [];
+    const typed = typeof l.name === 'string' ? l.name : typeof l.glaze === 'string' ? l.glaze : '';
+    if (!typed.trim()) return [];
     const type: LayerType = l.type === 'slip' || l.type === 'oxide' ? l.type : 'glaze';
+    // Use the studio's spelling for listed names, so "tenmoku" shows as "Tenmoku".
+    const listed = layerTypeInfo(type).options.find((o) => normName(o) === normName(typed));
+    const name = listed ?? typed.trim();
     const application = typeof l.application === 'string' && l.application ? l.application : null;
     return [{ type, name, application }];
   });

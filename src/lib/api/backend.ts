@@ -1,20 +1,14 @@
 import type {
   AuthUser,
   Combo,
-  ComboFilters,
   ComboInput,
-  FacetRow,
   Photo,
   PreparedPhoto,
   Profile,
   ProfileInput,
+  ResultSummary,
   SignUpInput,
 } from '../../types';
-
-export interface Page<T> {
-  items: T[];
-  hasMore: boolean;
-}
 
 /**
  * Everything the UI needs from storage. Two implementations:
@@ -37,9 +31,10 @@ export interface Backend {
   listProfiles(): Promise<Profile[]>;
   saveProfile(id: string, input: ProfileInput): Promise<Profile>;
 
-  listCombos(filters: ComboFilters, offset: number, limit: number): Promise<Page<Combo>>;
+  /** Every post the viewer can see, without notes or author details. Newest first. */
+  listResults(): Promise<ResultSummary[]>;
   getCombo(id: string): Promise<Combo | null>;
-  listFacetRows(): Promise<FacetRow[]>;
+  getCombos(ids: string[]): Promise<Combo[]>;
   createCombo(userId: string, input: ComboInput): Promise<Combo>;
   updateCombo(id: string, input: ComboInput): Promise<Combo>;
   deleteCombo(combo: Combo): Promise<void>;

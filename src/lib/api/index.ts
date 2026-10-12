@@ -14,4 +14,4 @@ const demo = import.meta.env.VITE_DEMO === 'true';
 export const backend: Backend =
   !demo && url && anonKey ? createSupabaseBackend(url, anonKey) : createLocalBackend();
 
-export type { Backend, Page } from './backend';
+export type { Backend } from './backend';
