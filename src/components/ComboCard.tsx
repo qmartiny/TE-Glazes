@@ -1,6 +1,7 @@
 import { Link } from 'react-router';
 import { backend } from '../lib/api';
 import { comboTitle, firingLabel } from '../lib/filters';
+import { layerLabel } from '../lib/layers';
 import type { Combo } from '../types';
 import { LockIcon } from './Icons';
 
@@ -24,7 +25,7 @@ export function ComboCard({ combo, showAuthor = true }: { combo: Combo; showAuth
       <div className="card-body">
         <h3 className="card-title">{comboTitle(combo)}</h3>
         {combo.title && (
-          <p className="card-glazes">{combo.layers.map((l) => l.glaze).join(' + ')}</p>
+          <p className="card-glazes">{combo.layers.map(layerLabel).join(' + ')}</p>
         )}
         <p className="card-meta">
           {combo.clay} · {firingLabel(combo.firing)}

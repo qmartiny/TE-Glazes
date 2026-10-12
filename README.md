@@ -2,8 +2,8 @@
 
 A small, mobile-friendly website where members of a pottery studio share the glaze combinations they use: think a very simplified [Glazy](https://glazy.org/) for one community.
 
-- **Share a combo**: add photos of pieces or test tiles, the clay, glaze 1, glaze 2, and so on (in the order applied, with how each was applied), oxidation or reduction, and notes like "Glaze 1 dipped, glaze 2 poured on top, runny!"
-- **Browse and filter** by glaze (matches any layer), clay, firing, studio or potter. Filters live in the URL, so a filtered view can be shared as a link.
+- **Share a combo**: add photos of pieces or test tiles, the clay, the glazes, slips and oxides in the order applied (with how each was applied), oxidation or reduction, and notes like "Glaze 1 dipped, glaze 2 poured on top, runny!"
+- **Browse and filter** by glaze, slip or oxide (each matches any layer), clay, firing, studio or potter. Filters live in the URL, so a filtered view can be shared as a link.
 - **Profiles**: name and studio, plus a page listing each person's combos. Mark a combo **private** to keep it as a personal note only you can see.
 - Anyone with the link can browse. You need an account to post.
 
@@ -13,10 +13,10 @@ It's a static site (React + Vite) backed by [Supabase](https://supabase.com) (fr
 
 ```bash
 npm install
-npm run dev
+VITE_DEMO=true npm run dev
 ```
 
-Without Supabase settings the site runs in **demo mode**: it comes with a few sample combos, and anything you add is saved in your own browser only. That's handy for trying it out or tweaking the design.
+In **demo mode** the site comes with a few sample combos, and anything you add is saved in your own browser only. That's handy for trying it out or tweaking the design. It's also what you get if no Supabase key is set in `src/config.ts`.
 
 ## Put it online for the studio
 
@@ -49,8 +49,8 @@ On a phone, members can use **Share → Add to Home Screen** to get an app-like 
 
 Edit [`src/config.ts`](src/config.ts) to change:
 
-- the **studio glaze names** (the current list is a placeholder; swap in your studio's actual glazes)
-- clay bodies, studio locations, application methods (dipped, poured, …)
+- the studio's **glazes, slips, oxides and clay bodies**
+- studio locations and application methods (dipped, poured, …)
 - the site name
 
 These lists fill the dropdowns and filters. People can always pick **Other…** and type something that isn't listed, and those values show up in the filters too.
@@ -65,7 +65,8 @@ These lists fill the dropdowns and filters. People can always pick **Other…** 
 ## Development
 
 ```bash
-npm run dev        # local dev server (demo mode until a Supabase key is set)
+npm run dev        # local dev server, using the Supabase project in src/config.ts
+VITE_DEMO=true npm run dev   # same, but with demo data kept in your browser
 npm test           # unit tests
 npm run build      # type-check and build to dist/
 ```

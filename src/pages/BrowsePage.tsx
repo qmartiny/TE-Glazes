@@ -18,7 +18,9 @@ export function BrowsePage() {
   const rows = facetRows.data;
   const facets = rows ? computeFacets(rows, filters) : null;
   const total = rows?.filter((r) => matchesFilters(r, filters)).length;
-  const setFilters = (next: ComboFilters) => setParams(paramsFromFilters(next), { replace: true });
+  // flushSync: apply right away so a quick second tap builds on the new filters, not the old ones.
+  const setFilters = (next: ComboFilters) =>
+    setParams(paramsFromFilters(next), { replace: true, flushSync: true });
 
   return (
     <>

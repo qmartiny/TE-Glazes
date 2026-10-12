@@ -16,33 +16,68 @@ export const SUPABASE_ANON_KEY = 'sb_publishable__YtJahehrqHV0QO8ZMzIJA_nC1RIZVK
 export const STUDIOS: string[] = ['Hoxton', 'Leyton', 'Tottenham', 'Highgate'];
 
 export const CLAYS: string[] = [
-  'Smooth white stoneware',
-  'Buff stoneware',
-  'Speckled stoneware',
-  'Grogged / crank stoneware',
-  'Dark / black stoneware',
-  'Red stoneware',
+  'Reclaim',
+  'Craft Crank',
+  'Lavafleck',
+  'Draycott',
+  'Flecked Stoneware',
+  'White Grogged',
+  'Staffordshire',
+  'Premium Sanded Buff',
+  'Special White',
   'Porcelain',
-  'Earthenware (terracotta)',
+  'Sibelco Black',
+  'Vulcan Medium Black',
+  'Vulcan Coarse Black',
+  'Oxidising St Thomas',
 ];
 
-// Placeholder list — replace with the studio's actual glaze names.
 export const GLAZES: string[] = [
-  'Clear',
-  'Satin White',
-  'Matt White',
-  'Celadon',
-  'Chun Blue',
-  'Shino',
-  'Tenmoku',
-  'Kaki / Iron Red',
+  'Shiny White',
+  'Cotton',
+  'Satin Cream',
+  'Matt Transparent',
+  'Transparent',
+  'Bruised Peach',
+  'Blush Rutile',
+  'Faux Celadon',
+  'Midnight Blue',
+  'Delia Duck',
+  'Noriko Nori',
+  'Monet Blue',
+  'Mustard',
   'Honey',
-  'Nuka',
-  'Copper Red',
-  'Satin Black',
+  'Tenmoku',
+  'Mushroom',
+  'Sea Green',
+  'Oribe',
+  'Gustav Grey',
+  'Gray Blue',
+  'Matt Black',
+  'Lavender',
+  'Sakura',
+  'Matcha',
 ];
 
-export const APPLICATIONS: string[] = ['Dipped', 'Poured', 'Brushed', 'Sprayed', 'Sponged', 'Trailed'];
+export const SLIPS: string[] = ['Yellow', 'Blue', 'Brown', 'White', 'Black'];
+
+export const OXIDES: string[] = [
+  'Red Iron Oxide',
+  'Black Iron Oxide',
+  'Cobalt Oxide',
+  'Copper Oxide',
+  'Manganese Oxide',
+];
+
+export const APPLICATIONS: string[] = [
+  'Dipped',
+  'Poured',
+  'Brushed',
+  'Sprayed',
+  'Sponged',
+  'Trailed',
+  'Wiped back',
+];
 
 export const FIRINGS = [
   { value: 'reduction', label: 'Reduction' },

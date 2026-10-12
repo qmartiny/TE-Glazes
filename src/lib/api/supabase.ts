@@ -5,10 +5,11 @@ import type {
   ComboInput,
   FacetRow,
   Firing,
-  GlazeLayer,
   Photo,
   Profile,
 } from '../../types';
+import { LAYER_FILTER_KEYS } from '../filters';
+import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 
 const BUCKET = 'photos';
@@ -30,7 +31,7 @@ interface ComboRow {
   clay: string;
   firing: Firing;
   studio: string | null;
-  layers: GlazeLayer[];
+  layers: unknown; // see normalizeLayers()
   description: string | null;
   photos: Photo[];
   is_private: boolean;
@@ -60,7 +61,7 @@ function toCombo(row: ComboRow): Combo {
     clay: row.clay,
     firing: row.firing,
     studio: row.studio,
-    layers: row.layers ?? [],
+    layers: normalizeLayers(row.layers),
     description: row.description,
     photos: row.photos ?? [],
     isPrivate: row.is_private,
@@ -187,7 +188,9 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
         if (!UUID_RE.test(filters.user)) return { items: [], hasMore: false };
         query = query.eq('user_id', filters.user);
       }
-      if (filters.glaze) query = query.filter('layers', 'cs', JSON.stringify([{ glaze: filters.glaze }]));
+      // jsonb containment: every requested glaze/slip/oxide must appear in some layer.
+      const wanted = LAYER_FILTER_KEYS.flatMap((type) => (filters[type] ? [{ type, name: filters[type] }] : []));
+      if (wanted.length) query = query.filter('layers', 'cs', JSON.stringify(wanted));
       const rows = check(await query) as unknown as ComboRow[];
       return { items: rows.slice(0, limit).map(toCombo), hasMore: rows.length > limit };
     },
@@ -201,7 +204,13 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
     async listFacetRows() {
       const rows = check(await sb.from('combinations').select('user_id, clay, firing, studio, layers'));
       return (rows as Pick<ComboRow, 'user_id' | 'clay' | 'firing' | 'studio' | 'layers'>[]).map(
-        (r): FacetRow => ({ userId: r.user_id, clay: r.clay, firing: r.firing, studio: r.studio, layers: r.layers }),
+        (r): FacetRow => ({
+          userId: r.user_id,
+          clay: r.clay,
+          firing: r.firing,
+          studio: r.studio,
+          layers: normalizeLayers(r.layers),
+        }),
       );
     },
 

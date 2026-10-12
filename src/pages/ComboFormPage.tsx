@@ -7,6 +7,7 @@ import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEdito
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
 import { CLAYS, FIRINGS, STUDIOS } from '../config';
 import { backend } from '../lib/api';
+import { layerLabel } from '../lib/layers';
 import { readPref, writePref } from '../lib/format';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboInput, Firing, Photo } from '../types';
@@ -40,7 +41,7 @@ function ComboForm({ initial }: { initial: Combo | null }) {
 
   const [photos, setPhotos] = useState<PhotoDraft[]>(() => initial?.photos.map(existingPhoto) ?? []);
   const [layers, setLayers] = useState<LayerDraft[]>(() =>
-    initial ? initial.layers.map((l) => newLayer(l.glaze, l.application ?? '')) : [newLayer()],
+    initial ? initial.layers.map((l) => newLayer(l.type, l.name, l.application ?? '')) : [newLayer()],
   );
   const [title, setTitle] = useState(initial?.title ?? '');
   const [clay, setClay] = useState(initial?.clay ?? last?.clay ?? '');
@@ -55,10 +56,10 @@ function ComboForm({ initial }: { initial: Combo | null }) {
     e.preventDefault();
     if (!user) return;
     const cleanLayers = layers
-      .map((l) => ({ glaze: l.glaze.trim(), application: l.application || null }))
-      .filter((l) => l.glaze);
+      .map((l) => ({ type: l.type, name: l.name.trim(), application: l.application || null }))
+      .filter((l) => l.name);
     if (!photos.length) return setError('Add at least one photo of the result.');
-    if (!cleanLayers.length) return setError('Add at least one glaze.');
+    if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
     if (!clay.trim()) return setError('Choose the clay.');
     if (!firing) return setError('Choose oxidation or reduction.');
 
@@ -119,8 +120,11 @@ function ComboForm({ initial }: { initial: Combo | null }) {
         </section>
 
         <section className="form-section">
-          <h2>Glazes</h2>
-          <p className="hint">In the order you applied them — glaze 1 first, then each one on top.</p>
+          <h2>Glazes, slips &amp; oxides</h2>
+          <p className="hint">
+            In the order you applied them: layer 1 first, then each one on top. Slip or oxide under the glaze goes
+            before it.
+          </p>
           <LayerEditor layers={layers} onChange={setLayers} />
         </section>
 
@@ -181,7 +185,7 @@ function ComboForm({ initial }: { initial: Combo | null }) {
               type="text"
               value={title}
               maxLength={120}
-              placeholder={layers.map((l) => l.glaze).filter(Boolean).join(' + ') || 'e.g. Blue rim tenmoku'}
+              placeholder={layers.filter((l) => l.name).map(layerLabel).join(' + ') || 'e.g. Blue rim tenmoku'}
               onChange={(e) => setTitle(e.target.value)}
             />
           </label>

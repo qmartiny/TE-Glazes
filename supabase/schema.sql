@@ -74,7 +74,8 @@ create table if not exists public.combinations (
   clay text not null check (char_length(clay) between 1 and 80),
   firing text not null check (firing in ('oxidation', 'reduction')),
   studio text check (char_length(studio) <= 60),
-  -- Ordered glaze layers, first applied first: [{"glaze": "Tenmoku", "application": "Dipped"}, ...]
+  -- Ordered layers, first applied first:
+  -- [{"type": "slip", "name": "Blue", "application": "Brushed"}, {"type": "glaze", "name": "Tenmoku", ...}, ...]
   layers jsonb not null check (
     jsonb_typeof(layers) = 'array' and jsonb_array_length(layers) between 1 and 8 and length(layers::text) <= 2000
   ),
@@ -113,6 +114,28 @@ drop trigger if exists combinations_set_timestamps on public.combinations;
 create trigger combinations_set_timestamps
   before insert or update on public.combinations
   for each row execute procedure public.set_timestamps();
+
+-- Slips & oxides: layers used to be {"glaze": "...", "application": ...}.
+-- Convert any combos saved that way, then only accept the new format.
+update public.combinations c
+set layers = (
+  select jsonb_agg(
+    case
+      when l ? 'name' then l
+      else jsonb_build_object('type', 'glaze', 'name', l ->> 'glaze', 'application', l -> 'application')
+    end
+    order by ord)
+  from jsonb_array_elements(c.layers) with ordinality as t(l, ord)
+)
+where jsonb_path_exists(c.layers, '$[*] ? (!(exists(@.name)))');
+
+alter table public.combinations drop constraint if exists combinations_layers_shape;
+alter table public.combinations add constraint combinations_layers_shape check (
+  not jsonb_path_exists(
+    layers,
+    '$[*] ? (!(@.type == "glaze" || @.type == "slip" || @.type == "oxide") || !(@.name.type() == "string"))'
+  )
+);
 
 alter table public.combinations enable row level security;
 

@@ -8,10 +8,20 @@ import { backend } from '../lib/api';
 import { comboTitle, firingLabel, paramsFromFilters } from '../lib/filters';
 import { formatDate } from '../lib/format';
 import { errorMessage, useAsync } from '../lib/useAsync';
-import type { ComboFilters } from '../types';
+import { LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
+import type { ComboFilters, Layer } from '../types';
 import { NotFoundPage } from './NotFoundPage';
 
 const browseLink = (filters: ComboFilters) => `/?${paramsFromFilters(filters)}`;
+
+/** "Glazes", or "Glazes & slips" etc. when the combo uses more than glaze. */
+function sectionTitle(layers: Layer[]) {
+  const types = LAYER_TYPES.filter((t) => layers.some((l) => l.type === t.type));
+  if (types.length === 1 && types[0].type === 'glaze') return 'Glazes';
+  const names = types.map((t) => `${t.label.toLowerCase()}s`);
+  const text = names.length > 1 ? `${names.slice(0, -1).join(', ')} & ${names[names.length - 1]}` : names[0];
+  return text.charAt(0).toUpperCase() + text.slice(1);
+}
 
 export function ComboPage() {
   const { id = '' } = useParams();
@@ -89,15 +99,18 @@ export function ComboPage() {
 
         <section aria-labelledby="glazes-h">
           <h2 id="glazes-h" className="section-label">
-            Glazes <span className="muted">(in the order applied)</span>
+            {sectionTitle(combo.layers)} <span className="muted">(in the order applied)</span>
           </h2>
           <ol className="layers">
             {combo.layers.map((layer, i) => (
               <li key={i}>
                 <span className="layer-num">{i + 1}</span>
-                <Link to={browseLink({ glaze: layer.glaze })} className="layer-glaze">
-                  {layer.glaze}
+                <Link to={browseLink({ [layer.type]: layer.name })} className="layer-glaze">
+                  {layer.name}
                 </Link>
+                {layerLabel(layer) !== layer.name && (
+                  <span className="layer-tag">{layerTypeInfo(layer.type).label}</span>
+                )}
                 {layer.application && <span className="muted"> · {layer.application}</span>}
               </li>
             ))}

@@ -1,4 +1,4 @@
-import { CLAYS, FIRINGS, GLAZES, STUDIOS } from '../config';
+import { CLAYS, FIRINGS, GLAZES, OXIDES, SLIPS, STUDIOS } from '../config';
 import { buildOptions, hasFilters, type Facets, type FilterKey, type Option } from '../lib/filters';
 import type { ComboFilters, Profile } from '../types';
 
@@ -67,6 +67,18 @@ export function FilterBar({ filters, facets, profiles, onChange }: Props) {
         valueLabel={FIRINGS.find((f) => f.value === filters.firing)?.label}
         options={firingOptions}
         onChange={set('firing')}
+      />
+      <PillSelect
+        label="Slip"
+        value={filters.slip}
+        options={buildOptions(SLIPS, counts('slip'), filters.slip)}
+        onChange={set('slip')}
+      />
+      <PillSelect
+        label="Oxide"
+        value={filters.oxide}
+        options={buildOptions(OXIDES, counts('oxide'), filters.oxide)}
+        onChange={set('oxide')}
       />
       {STUDIOS.length > 1 && (
         <PillSelect

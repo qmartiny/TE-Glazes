@@ -1,5 +1,6 @@
 import type { AuthUser, Combo, FacetRow, Profile } from '../../types';
 import { matchesFilters } from '../filters';
+import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 import { DEMO_PROFILES, demoCombos } from './demoSeed';
 
@@ -87,7 +88,13 @@ export function createLocalBackend(): Backend {
   let state: Promise<State> | null = null;
 
   const getState = () =>
-    (state ??= (async () => (await store?.load()) ?? seedState())());
+    (state ??= (async () => {
+      const saved = await store?.load();
+      if (!saved) return seedState();
+      // Demo data saved by an older version stored glaze-only layers.
+      for (const c of saved.combos) c.layers = normalizeLayers(c.layers);
+      return saved;
+    })());
 
   async function update<T>(fn: (s: State) => T): Promise<T> {
     const s = await getState();
