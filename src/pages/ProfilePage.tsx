@@ -1,4 +1,5 @@
 import { Link, useNavigate, useParams } from 'react-router';
+import { AddComboButton } from '../components/AddComboButton';
 import { useAuth } from '../auth/AuthContext';
 import { CardGrid, GridSkeleton, LoadError, ResultCard } from '../components/Cards';
 import { Icon } from '../components/Icon';
@@ -73,9 +74,9 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
         <p>You haven’t added any combos yet. Everything you add, shared or private, shows up here.</p>
-        <Link to="/new" className="btn btn-filled">
+        <AddComboButton className="btn btn-filled">
           <Icon name="add" /> Add your first combo
-        </Link>
+        </AddComboButton>
       </div>
     ) : (
       <div className="empty">

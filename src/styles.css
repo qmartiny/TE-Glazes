@@ -413,6 +413,27 @@ a.card:active::after,
   letter-spacing: 0.02em;
 }
 
+/* A button that opens the photo picker: the file input covers it, invisibly. */
+.file-trigger {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-trigger input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-trigger:has(input:focus-visible) {
+  outline: 3px solid var(--md-secondary);
+  outline-offset: 2px;
+}
+
 /* FAB */
 .fab {
   display: grid;

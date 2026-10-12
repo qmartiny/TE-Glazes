@@ -5,6 +5,7 @@ import { APP_NAME } from '../config';
 import { backend } from '../lib/api';
 import { initials } from '../lib/format';
 import { Icon, Logo, type IconName } from './Icon';
+import { AddComboButton } from './AddComboButton';
 import { SnackbarHost } from './Snackbar';
 
 interface Destination {
@@ -83,9 +84,9 @@ export function Layout() {
   }
 
   const fab = (
-    <Link to="/new" className="fab" aria-label="Add a combo">
+    <AddComboButton className="fab" label="Add a combo">
       <Icon name="add" />
-    </Link>
+    </AddComboButton>
   );
 
   return (

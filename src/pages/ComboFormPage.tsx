@@ -1,4 +1,4 @@
-import { useState, type FormEvent } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
@@ -11,6 +11,7 @@ import { backend } from '../lib/api';
 import { comboKey, layerLabel } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
 import { readPref, writePref } from '../lib/format';
+import { clearHandedOffPhotos, peekHandedOffPhotos } from '../lib/photoHandoff';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboInput, Firing, Photo } from '../types';
 import { NotFoundPage } from './NotFoundPage';
@@ -52,6 +53,9 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
   const last = initial ? null : readPref<LastUsed>('last');
 
   const [photos, setPhotos] = useState<PhotoDraft[]>(() => initial?.photos.map(existingPhoto) ?? []);
+  // Photos picked before the form opened, from the + button or "Add your result".
+  const [handedOff] = useState(() => (initial ? [] : peekHandedOffPhotos()));
+  useEffect(() => clearHandedOffPhotos(), []);
   const [layers, setLayers] = useState<LayerDraft[]>(() =>
     initial
       ? initial.layers.map((l) => newLayer(l.type, l.name, l.application ?? ''))
@@ -79,9 +83,9 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
     const cleanLayers = layers
       .map((l) => ({ type: l.type, name: l.name.trim(), application: l.application || null }))
       .filter((l) => l.name);
+    if (!photos.length) return setError('Add at least one photo of the result.');
     if (!clay.trim()) return setError('Choose the clay.');
     if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
-    if (!photos.length) return setError('Add at least one photo of the result.');
 
     setError(null);
     const uploaded: Photo[] = [];
@@ -130,8 +134,14 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
     <form className="form" onSubmit={onSubmit}>
       <h1 className="page-title">{initial ? 'Edit your result' : template ? 'Add your result' : 'Add a combo'}</h1>
 
-      {/* In the order you make it: clay, what went on it, the firing, then how it came out. */}
+      {/* Photos first (the + button opens the photo picker), then clay, what went on it and the firing. */}
       <fieldset disabled={saving}>
+        <section className="form-section">
+          <h2 className="section-title">Photos</h2>
+          <p className="section-supporting">Finished pieces or test tiles. The first photo is the cover.</p>
+          <PhotoPicker photos={photos} onChange={setPhotos} initialFiles={handedOff} />
+        </section>
+
         <section className="form-section">
           <h2 className="section-title">Clay</h2>
           <ChoiceField
@@ -182,12 +192,6 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
               </label>
             ))}
           </div>
-        </section>
-
-        <section className="form-section">
-          <h2 className="section-title">Photos</h2>
-          <p className="section-supporting">Finished pieces or test tiles. The first photo is the cover.</p>
-          <PhotoPicker photos={photos} onChange={setPhotos} />
         </section>
 
         <section className="form-section">
