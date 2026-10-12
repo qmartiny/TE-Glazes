@@ -1,4 +1,4 @@
-# TE Glaze Book
+# Glaze Book
 
 A small, mobile-friendly website where members of a pottery studio share the glaze combinations they use: think a very simplified [Glazy](https://glazy.org/) for one community.
 
