@@ -42,7 +42,7 @@ export function ProfilePage() {
         </div>
         {isMe && (
           <Link to="/account" className="btn btn-outlined profile-edit">
-            <Icon name="edit" /> Edit profile
+            <Icon name="settings" /> Settings
           </Link>
         )}
       </section>

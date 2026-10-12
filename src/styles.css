@@ -6,6 +6,7 @@
    Layout follows M3 window classes: compact (<600px) gets a bottom
    navigation bar + FAB, wider screens a navigation rail. */
 :root {
+  color-scheme: light;
   --md-primary: #664e3d;
   --md-on-primary: #ffffff;
   --md-primary-container: #efe3d7;
@@ -1606,6 +1607,10 @@ fieldset:disabled .tf {
   cursor: pointer;
 }
 
+.segmented-full {
+  justify-self: stretch;
+}
+
 .segment + .segment {
   border-left: 1px solid var(--md-outline);
 }
@@ -1627,7 +1632,8 @@ fieldset:disabled .tf {
   cursor: pointer;
 }
 
-.segment:focus-within {
+/* Keyboard focus only, so a tap doesn't leave a ring. */
+.segment:has(input:focus-visible) {
   outline: 3px solid var(--md-secondary);
   outline-offset: -3px;
 }
