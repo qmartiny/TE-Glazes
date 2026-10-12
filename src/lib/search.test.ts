@@ -43,6 +43,13 @@ describe('suggest', () => {
     ]);
   });
 
+  it('suggests kilns by their everyday names', () => {
+    expect(suggest('gas', facets, names, {}).map((x) => `${x.kind}:${x.value}:${x.label}`)).toEqual([
+      'firing:reduction:Gas kiln',
+    ]);
+    expect(suggest('kiln', facets, names, {}).map((x) => x.label)).toEqual(['Gas kiln', 'Electric kiln']);
+  });
+
   it('lists everything of a kind when you type the kind', () => {
     expect(suggest('slip', facets, names, {}).map((x) => x.label)).toEqual(['Blue']);
   });

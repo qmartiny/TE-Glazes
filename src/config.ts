@@ -79,10 +79,12 @@ export const APPLICATIONS: string[] = [
   'Wiped back',
 ];
 
+// Kiln type. Stored as the firing atmosphere (electric kilns fire in
+// oxidation, gas kilns in reduction); people only see the kiln names.
 // New combos default to the first one.
 export const FIRINGS = [
-  { value: 'oxidation', label: 'Oxidation' },
-  { value: 'reduction', label: 'Reduction' },
+  { value: 'oxidation', label: 'Electric kiln' },
+  { value: 'reduction', label: 'Gas kiln' },
 ] as const;
 
 export const MAX_PHOTOS = 6;

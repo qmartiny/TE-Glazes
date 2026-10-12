@@ -225,7 +225,7 @@ function ResultBlock({
           </p>
         )}
 
-        <div className="chip-row chip-row-wrap" aria-label="Clay and firing">
+        <div className="chip-row chip-row-wrap" aria-label="Clay and kiln">
           <Link to={browseLink({ clay: combo.clay })} className="chip chip-assist">
             <Icon name="texture" className="chip-leading chip-icon-primary" />
             <span className="chip-text">{combo.clay}</span>

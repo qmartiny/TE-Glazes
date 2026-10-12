@@ -90,7 +90,7 @@ export function FilterBar({ filters, facets, profiles, onChange }: Props) {
         onChange={set('clay')}
       />
       <FilterChip
-        label="Firing"
+        label="Kiln"
         value={filters.firing}
         valueLabel={FIRINGS.find((f) => f.value === filters.firing)?.label}
         options={firingOptions}

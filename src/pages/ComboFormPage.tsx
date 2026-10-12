@@ -157,7 +157,7 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
         </section>
 
         <section className="form-section">
-          <h2 className="section-title">Clay &amp; firing</h2>
+          <h2 className="section-title">Clay &amp; kiln</h2>
           <ChoiceField
             id="clay"
             label="Clay"
@@ -168,7 +168,7 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
             otherLabel="Clay name"
             required
           />
-          <div className="segmented" role="radiogroup" aria-label="Firing">
+          <div className="segmented" role="radiogroup" aria-label="Kiln">
             {FIRINGS.map((f) => (
               <label key={f.value} className={`segment${firing === f.value ? ' selected' : ''}`}>
                 <input

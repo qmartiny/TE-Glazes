@@ -1,4 +1,5 @@
 import type { ComboFilters, Firing, Layer, LayerType, ResultSummary } from '../types';
+import { FIRINGS } from '../config';
 import { comboKey, layerLabel, normName } from './layers';
 
 export const FILTER_KEYS = ['q', 'glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
@@ -175,7 +176,7 @@ export function buildOptions(defaults: readonly string[], counts: Counts, select
 }
 
 export function firingLabel(firing: Firing): string {
-  return firing === 'oxidation' ? 'Oxidation' : 'Reduction';
+  return FIRINGS.find((f) => f.value === firing)?.label ?? firing;
 }
 
 /** "Craft Crank", "Craft Crank, Porcelain", "Craft Crank, Porcelain +2" */
@@ -187,5 +188,5 @@ export function summarize(values: string[], max = 2): string {
 
 export function firingsLabel(firings: Firing[]): string {
   const unique = [...new Set(firings)];
-  return unique.length > 1 ? 'Oxidation & reduction' : firingLabel(unique[0] ?? 'oxidation');
+  return unique.length > 1 ? 'Electric & gas kiln' : firingLabel(unique[0] ?? 'oxidation');
 }

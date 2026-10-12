@@ -16,7 +16,7 @@ export const KIND_LABELS: Record<FacetKey, string> = {
   slip: 'Slip',
   oxide: 'Oxide',
   clay: 'Clay',
-  firing: 'Firing',
+  firing: 'Kiln',
   user: 'Member',
 };
 

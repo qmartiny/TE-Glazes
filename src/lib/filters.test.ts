@@ -5,6 +5,7 @@ import {
   computeFacets,
   filterGroups,
   filtersFromParams,
+  firingsLabel,
   groupResults,
   groupTitle,
   paramsFromFilters,
@@ -117,6 +118,12 @@ describe('labels', () => {
   it('names a combo after its layers', () => {
     expect(groupTitle({ layers: [glaze('Tenmoku'), glaze('Midnight Blue')] })).toBe('Tenmoku + Midnight Blue');
     expect(groupTitle({ layers: [slip('Blue'), oxide('Cobalt Oxide')] })).toBe('Blue slip + Cobalt Oxide');
+  });
+
+  it('calls firings by the kiln', () => {
+    expect(firingsLabel(['oxidation'])).toBe('Electric kiln');
+    expect(firingsLabel(['reduction', 'reduction'])).toBe('Gas kiln');
+    expect(firingsLabel(['oxidation', 'reduction'])).toBe('Electric & gas kiln');
   });
 
   it('summarizes lists', () => {
