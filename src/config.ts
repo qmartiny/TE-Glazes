@@ -4,7 +4,7 @@
 // People can always type a value that isn't in a list ("Other…").
 // ---------------------------------------------------------------------------
 
-export const APP_NAME = 'The Glaze Book';
+export const APP_NAME = 'TE Glaze Book';
 export const APP_TAGLINE = 'What the studio glazes look like together, shared by members';
 
 // Your Supabase project (Project Settings → API Keys). The publishable / anon
