@@ -13,7 +13,7 @@ export const APP_TAGLINE = 'What the studio glazes look like together, shared by
 export const SUPABASE_URL = 'https://ctdctrnaapynovtwkikl.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable__YtJahehrqHV0QO8ZMzIJA_nC1RIZVK';
 
-export const STUDIOS: string[] = ['Hoxton', 'Leyton', 'Tottenham', 'Highgate'];
+export const STUDIOS: string[] = ['Hoxton', 'Leyton', 'Highgate'];
 
 export const CLAYS: string[] = [
   'Reclaim',
