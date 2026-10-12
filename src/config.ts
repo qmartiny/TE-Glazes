@@ -7,6 +7,12 @@
 export const APP_NAME = 'TE Glazes';
 export const APP_TAGLINE = 'What the studio glazes look like together, shared by members';
 
+// Your Supabase project (Project Settings → API Keys). The publishable / anon
+// key is meant to be public: the database's access rules protect the data.
+// While the key is empty the site runs in demo mode.
+export const SUPABASE_URL = 'https://ctdctrnaapynovtwkikl.supabase.co';
+export const SUPABASE_ANON_KEY = '';
+
 export const STUDIOS: string[] = ['Hoxton', 'Leyton', 'Tottenham', 'Highgate'];
 
 export const CLAYS: string[] = [

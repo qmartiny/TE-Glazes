@@ -29,18 +29,19 @@ About 15 minutes, all free.
 3. Go to **Authentication → Sign In / Providers → Email**:
    - The simplest option is to switch **Confirm email** off. People can then sign up and start posting straight away.
    - If you want email confirmation or **password-reset emails**, set up custom SMTP under **Authentication → Emails** (for example with [Resend](https://resend.com)'s free tier). Supabase's built-in email sender is only meant for testing and won't reliably reach your members.
-4. Go to **Authentication → URL Configuration**. Set **Site URL** to your site's address (step 2 below) and add `https://YOUR-SITE-ADDRESS/**` under **Redirect URLs**.
-5. Under **Project Settings → API Keys**, copy the **Project URL** and the **anon / publishable key**. The anon key is meant to be public; the access rules in the database protect the data.
+4. Go to **Authentication → URL Configuration**. Set **Site URL** to your site's address (step 3 below) and add `https://YOUR-SITE-ADDRESS/**` under **Redirect URLs**.
+5. Under **Project Settings → API Keys**, copy the **Project URL** and the **anon / publishable key** (never the secret / service_role key). The anon key is meant to be public; the access rules in the database protect the data.
 
-### 2. Publish the site (GitHub Pages)
+### 2. Connect the site to it
+
+Put the Project URL and the anon / publishable key into `SUPABASE_URL` and `SUPABASE_ANON_KEY` at the top of [`src/config.ts`](src/config.ts). (Alternatively set `VITE_SUPABASE_URL` / `VITE_SUPABASE_ANON_KEY` as environment variables, or as GitHub Actions variables under **Settings → Secrets and variables → Actions → Variables**; those override `config.ts`.)
+
+### 3. Publish the site (GitHub Pages)
 
 1. In this GitHub repo, go to **Settings → Pages** and set **Source** to **GitHub Actions**.
-2. Go to **Settings → Secrets and variables → Actions → Variables** and add:
-   - `VITE_SUPABASE_URL`: the Project URL
-   - `VITE_SUPABASE_ANON_KEY`: the anon / publishable key
-3. Push or merge to `main`. The workflow runs the tests, builds the site and publishes it at `https://<your-github-username>.github.io/TE-Glazes/`.
+2. Push or merge to `main`. The workflow runs the tests, builds the site and publishes it at `https://<your-github-username>.github.io/TE-Glazes/`.
 
-GitHub Pages on a private repository needs a paid GitHub plan. Netlify, Vercel or Cloudflare Pages work just as well: build command `npm run build`, output folder `dist`, plus the same two environment variables.
+GitHub Pages on a private repository needs a paid GitHub plan. Netlify, Vercel or Cloudflare Pages work just as well: build command `npm run build`, output folder `dist`.
 
 On a phone, members can use **Share → Add to Home Screen** to get an app-like icon.
 
@@ -64,12 +65,12 @@ These lists fill the dropdowns and filters. People can always pick **Other…** 
 ## Development
 
 ```bash
-npm run dev        # local dev server (demo mode unless .env.local is set)
+npm run dev        # local dev server (demo mode until a Supabase key is set)
 npm test           # unit tests
 npm run build      # type-check and build to dist/
 ```
 
-To develop against a real Supabase project, copy `.env.example` to `.env.local` and fill in the two values.
+`.env.local` (see `.env.example`) overrides the Supabase settings in `config.ts`, e.g. to point local development at a separate test project.
 
 ```
 src/
