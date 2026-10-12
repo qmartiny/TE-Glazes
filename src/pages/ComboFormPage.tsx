@@ -79,9 +79,9 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
     const cleanLayers = layers
       .map((l) => ({ type: l.type, name: l.name.trim(), application: l.application || null }))
       .filter((l) => l.name);
-    if (!photos.length) return setError('Add at least one photo of the result.');
-    if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
     if (!clay.trim()) return setError('Choose the clay.');
+    if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
+    if (!photos.length) return setError('Add at least one photo of the result.');
 
     setError(null);
     const uploaded: Photo[] = [];
@@ -130,11 +130,20 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
     <form className="form" onSubmit={onSubmit}>
       <h1 className="page-title">{initial ? 'Edit your result' : template ? 'Add your result' : 'Add a combo'}</h1>
 
+      {/* In the order you make it: clay, what went on it, the firing, then how it came out. */}
       <fieldset disabled={saving}>
         <section className="form-section">
-          <h2 className="section-title">Photos</h2>
-          <p className="section-supporting">Finished pieces or test tiles. The first photo is the cover.</p>
-          <PhotoPicker photos={photos} onChange={setPhotos} />
+          <h2 className="section-title">Clay</h2>
+          <ChoiceField
+            id="clay"
+            label="Clay"
+            value={clay}
+            options={CLAYS}
+            onChange={setClay}
+            placeholder="Choose clay"
+            otherLabel="Clay name"
+            required
+          />
         </section>
 
         <section className="form-section">
@@ -157,17 +166,7 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
         </section>
 
         <section className="form-section">
-          <h2 className="section-title">Clay &amp; kiln</h2>
-          <ChoiceField
-            id="clay"
-            label="Clay"
-            value={clay}
-            options={CLAYS}
-            onChange={setClay}
-            placeholder="Choose clay"
-            otherLabel="Clay name"
-            required
-          />
+          <h2 className="section-title">Kiln</h2>
           <div className="segmented" role="radiogroup" aria-label="Kiln">
             {FIRINGS.map((f) => (
               <label key={f.value} className={`segment${firing === f.value ? ' selected' : ''}`}>
@@ -183,6 +182,12 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
               </label>
             ))}
           </div>
+        </section>
+
+        <section className="form-section">
+          <h2 className="section-title">Photos</h2>
+          <p className="section-supporting">Finished pieces or test tiles. The first photo is the cover.</p>
+          <PhotoPicker photos={photos} onChange={setPhotos} />
         </section>
 
         <section className="form-section">
