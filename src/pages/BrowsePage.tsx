@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
-import { Link, useSearchParams } from 'react-router';
+import { useSearchParams } from 'react-router';
+import { AddComboButton } from '../components/AddComboButton';
 import { CardGrid, GridSkeleton, GroupCard, LoadError } from '../components/Cards';
 import { FilterBar } from '../components/FilterBar';
 import { Icon } from '../components/Icon';
@@ -43,9 +44,9 @@ export function BrowsePage() {
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
         <p>No combos yet. Be the first to share one!</p>
-        <Link to="/new" className="btn btn-filled">
+        <AddComboButton className="btn btn-filled">
           <Icon name="add" /> Add a combo
-        </Link>
+        </AddComboButton>
       </div>
     );
   else

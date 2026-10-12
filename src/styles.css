@@ -6,6 +6,7 @@
    Layout follows M3 window classes: compact (<600px) gets a bottom
    navigation bar + FAB, wider screens a navigation rail. */
 :root {
+  color-scheme: light;
   --md-primary: #664e3d;
   --md-on-primary: #ffffff;
   --md-primary-container: #efe3d7;
@@ -410,6 +411,27 @@ a.card:active::after,
   font-size: 0.6875rem;
   font-weight: 700;
   letter-spacing: 0.02em;
+}
+
+/* A button that opens the photo picker: the file input covers it, invisibly. */
+.file-trigger {
+  position: relative;
+  cursor: pointer;
+}
+
+.file-trigger input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.file-trigger:has(input:focus-visible) {
+  outline: 3px solid var(--md-secondary);
+  outline-offset: 2px;
 }
 
 /* FAB */
@@ -1606,6 +1628,10 @@ fieldset:disabled .tf {
   cursor: pointer;
 }
 
+.segmented-full {
+  justify-self: stretch;
+}
+
 .segment + .segment {
   border-left: 1px solid var(--md-outline);
 }
@@ -1627,7 +1653,8 @@ fieldset:disabled .tf {
   cursor: pointer;
 }
 
-.segment:focus-within {
+/* Keyboard focus only, so a tap doesn't leave a ring. */
+.segment:has(input:focus-visible) {
   outline: 3px solid var(--md-secondary);
   outline-offset: -3px;
 }

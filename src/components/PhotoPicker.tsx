@@ -16,9 +16,11 @@ export const existingPhoto = (photo: Photo): PhotoDraft => ({ key: `p${nextKey++
 interface Props {
   photos: PhotoDraft[];
   onChange: (photos: PhotoDraft[]) => void;
+  /** Files picked before the form opened, added straight away. */
+  initialFiles?: File[];
 }
 
-export function PhotoPicker({ photos, onChange }: Props) {
+export function PhotoPicker({ photos, onChange, initialFiles }: Props) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const input = useRef<HTMLInputElement>(null);
@@ -32,12 +34,20 @@ export function PhotoPicker({ photos, onChange }: Props) {
   }, [photos]);
   useEffect(() => () => previews.current.forEach((url) => URL.revokeObjectURL(url)), []);
 
-  async function onFiles(files: FileList | null) {
-    if (!files?.length) return;
+  // Once, even when React mounts twice in development.
+  const tookInitial = useRef(false);
+  useEffect(() => {
+    if (tookInitial.current || !initialFiles?.length) return;
+    tookInitial.current = true;
+    void onFiles(initialFiles);
+  }, []); // only the files picked on the way in
+
+  async function onFiles(files: File[]) {
+    if (!files.length) return;
     setError(null);
     setBusy(true);
     const room = MAX_PHOTOS - photos.length;
-    const picked = [...files].slice(0, room);
+    const picked = files.slice(0, room);
     const added: PhotoDraft[] = [];
     try {
       for (const file of picked) {
@@ -95,7 +105,7 @@ export function PhotoPicker({ photos, onChange }: Props) {
               accept="image/*"
               multiple
               disabled={busy}
-              onChange={(e) => onFiles(e.target.files)}
+              onChange={(e) => onFiles([...(e.target.files ?? [])])}
             />
           </label>
         )}

@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
+import { AddComboButton } from '../components/AddComboButton';
 import { useAuth } from '../auth/AuthContext';
 import { comboLink } from '../components/Cards';
 import { Dialog } from '../components/Dialog';
@@ -136,9 +137,9 @@ export function ComboPage() {
 
         <div className="actions">
           {user && (
-            <Link to={`/new?like=${group.results[0].id}`} className="btn btn-filled">
+            <AddComboButton to={`/new?like=${group.results[0].id}`} className="btn btn-filled">
               <Icon name="add" /> Add your result
-            </Link>
+            </AddComboButton>
           )}
           <button type="button" className="btn btn-tonal" onClick={onShare}>
             <Icon name="share" /> Share

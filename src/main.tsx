@@ -1,7 +1,11 @@
 import { StrictMode } from 'react';
 import { createRoot } from 'react-dom/client';
 import { App } from './App';
+import { applyTheme, readTheme } from './lib/theme';
 import './styles.css';
+
+// Also sets the phone's status bar colour to match a saved Light/Dark choice.
+applyTheme(readTheme());
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>

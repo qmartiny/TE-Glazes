@@ -7,6 +7,7 @@ import { Icon } from '../components/Icon';
 import { showSnackbar } from '../components/Snackbar';
 import { STUDIOS } from '../config';
 import { backend } from '../lib/api';
+import { readTheme, setTheme, THEMES } from '../lib/theme';
 import { errorMessage } from '../lib/useAsync';
 
 export function AccountPage() {
@@ -52,8 +53,12 @@ export function AccountPage() {
   return (
     <div className="narrow">
       <form className="form" onSubmit={onSubmit}>
-        <h1 className="page-title">{settingUp ? 'Set up your profile' : 'Edit profile'}</h1>
-        {settingUp && <p className="section-supporting">Tell other members who you are before adding combos.</p>}
+        <h1 className="page-title">{settingUp ? 'Set up your profile' : 'Settings'}</h1>
+        {settingUp ? (
+          <p className="section-supporting">Tell other members who you are before adding combos.</p>
+        ) : (
+          <h2 className="section-title">Profile</h2>
+        )}
         <fieldset disabled={saving}>
           <TextField
             label="Name"
@@ -93,6 +98,8 @@ export function AccountPage() {
         </div>
       </form>
 
+      <AppearanceSettings />
+
       {/* Once the profile exists, signing out lives on My profile. */}
       {settingUp && (
         <section className="account-extra">
@@ -103,5 +110,36 @@ export function AccountPage() {
         </section>
       )}
     </div>
+  );
+}
+
+/** Light or dark theme, applied straight away and remembered on this device. */
+function AppearanceSettings() {
+  const [theme, setThemeState] = useState(readTheme);
+  return (
+    <section className="account-extra" aria-labelledby="appearance-h">
+      <h2 id="appearance-h" className="section-title">
+        Appearance
+      </h2>
+      <div className="segmented segmented-full" role="radiogroup" aria-label="Theme">
+        {THEMES.map((t) => (
+          <label key={t.value} className={`segment${theme === t.value ? ' selected' : ''}`}>
+            <input
+              type="radio"
+              name="theme"
+              value={t.value}
+              checked={theme === t.value}
+              onChange={() => {
+                setTheme(t.value);
+                setThemeState(t.value);
+              }}
+            />
+            {theme === t.value && <Icon name="check" />}
+            {t.label}
+          </label>
+        ))}
+      </div>
+      <p className="section-supporting">Auto matches your phone or computer. Saved on this device.</p>
+    </section>
   );
 }

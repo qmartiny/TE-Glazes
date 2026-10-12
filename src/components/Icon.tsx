@@ -24,6 +24,7 @@ export const ICONS = [
   'science',
   'search',
   'search_off',
+  'settings',
   'share',
   'texture',
   'water_drop',
