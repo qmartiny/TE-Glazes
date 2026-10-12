@@ -1,7 +1,11 @@
-import type { Combo, ComboFilters, FacetRow, Firing } from '../types';
+import type { Combo, ComboFilters, FacetRow, Firing, LayerType } from '../types';
+import { layerLabel } from './layers';
 
-export const FILTER_KEYS = ['glaze', 'clay', 'firing', 'studio', 'user'] as const;
+export const FILTER_KEYS = ['glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
 export type FilterKey = (typeof FILTER_KEYS)[number];
+
+/** Filters that match a glaze, slip or oxide in any layer. */
+export const LAYER_FILTER_KEYS = ['glaze', 'slip', 'oxide'] as const satisfies readonly LayerType[];
 
 export function filtersFromParams(params: URLSearchParams): ComboFilters {
   const filters: ComboFilters = {};
@@ -38,10 +42,10 @@ export function matchesFilters(
 ): boolean {
   if (ignore !== 'clay' && filters.clay && row.clay !== filters.clay) return false;
   if (ignore !== 'firing' && filters.firing && row.firing !== filters.firing) return false;
-  if (ignore !== 'studio' && filters.studio && row.studio !== filters.studio) return false;
   if (ignore !== 'user' && filters.user && row.userId !== filters.user) return false;
-  if (ignore !== 'glaze' && filters.glaze && !row.layers.some((l) => l.glaze === filters.glaze)) {
-    return false;
+  for (const type of LAYER_FILTER_KEYS) {
+    const name = filters[type];
+    if (ignore !== type && name && !row.layers.some((l) => l.type === type && l.name === name)) return false;
   }
   return true;
 }
@@ -50,9 +54,10 @@ export type Counts = Map<string, number>;
 
 export interface Facets {
   glaze: Counts;
+  slip: Counts;
+  oxide: Counts;
   clay: Counts;
   firing: Counts;
-  studio: Counts;
   user: Counts;
 }
 
@@ -68,19 +73,21 @@ function bump(counts: Counts, key: string | null | undefined) {
 export function computeFacets(rows: FacetRow[], filters: ComboFilters): Facets {
   const facets: Facets = {
     glaze: new Map(),
+    slip: new Map(),
+    oxide: new Map(),
     clay: new Map(),
     firing: new Map(),
-    studio: new Map(),
     user: new Map(),
   };
   for (const row of rows) {
-    if (matchesFilters(row, filters, 'glaze')) {
+    for (const type of LAYER_FILTER_KEYS) {
+      if (!matchesFilters(row, filters, type)) continue;
       // A glaze used twice in one combo still counts that combo once.
-      for (const glaze of new Set(row.layers.map((l) => l.glaze))) bump(facets.glaze, glaze);
+      const names = new Set(row.layers.filter((l) => l.type === type).map((l) => l.name));
+      for (const name of names) bump(facets[type], name);
     }
     if (matchesFilters(row, filters, 'clay')) bump(facets.clay, row.clay);
     if (matchesFilters(row, filters, 'firing')) bump(facets.firing, row.firing);
-    if (matchesFilters(row, filters, 'studio')) bump(facets.studio, row.studio);
     if (matchesFilters(row, filters, 'user')) bump(facets.user, row.userId);
   }
   return facets;
@@ -117,5 +124,5 @@ export function firingLabel(firing: Firing): string {
 
 export function comboTitle(combo: Pick<Combo, 'title' | 'layers'>): string {
   if (combo.title?.trim()) return combo.title.trim();
-  return combo.layers.map((l) => l.glaze).join(' + ') || 'Untitled combo';
+  return combo.layers.map(layerLabel).join(' + ') || 'Untitled combo';
 }

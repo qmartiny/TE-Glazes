@@ -5,8 +5,11 @@ import { ChoiceField } from '../components/ChoiceField';
 import { invalidateComboCache } from '../components/ComboList';
 import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEditor';
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
-import { CLAYS, FIRINGS, STUDIOS } from '../config';
+import { TextArea, TextField } from '../components/Fields';
+import { Icon } from '../components/Icon';
+import { CLAYS, FIRINGS } from '../config';
 import { backend } from '../lib/api';
+import { layerLabel } from '../lib/layers';
 import { readPref, writePref } from '../lib/format';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboInput, Firing, Photo } from '../types';
@@ -14,7 +17,6 @@ import { NotFoundPage } from './NotFoundPage';
 
 interface LastUsed {
   clay: string;
-  firing: Firing;
 }
 
 export function ComboFormPage() {
@@ -34,18 +36,17 @@ export function ComboFormPage() {
 }
 
 function ComboForm({ initial }: { initial: Combo | null }) {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const navigate = useNavigate();
   const last = initial ? null : readPref<LastUsed>('last');
 
   const [photos, setPhotos] = useState<PhotoDraft[]>(() => initial?.photos.map(existingPhoto) ?? []);
   const [layers, setLayers] = useState<LayerDraft[]>(() =>
-    initial ? initial.layers.map((l) => newLayer(l.glaze, l.application ?? '')) : [newLayer()],
+    initial ? initial.layers.map((l) => newLayer(l.type, l.name, l.application ?? '')) : [newLayer()],
   );
   const [title, setTitle] = useState(initial?.title ?? '');
   const [clay, setClay] = useState(initial?.clay ?? last?.clay ?? '');
-  const [firing, setFiring] = useState<Firing | ''>(initial?.firing ?? last?.firing ?? '');
-  const [studio, setStudio] = useState(initial?.studio ?? profile?.studio ?? '');
+  const [firing, setFiring] = useState<Firing>(initial?.firing ?? FIRINGS[0].value);
   const [description, setDescription] = useState(initial?.description ?? '');
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false);
   const [status, setStatus] = useState<string | null>(null);
@@ -55,12 +56,11 @@ function ComboForm({ initial }: { initial: Combo | null }) {
     e.preventDefault();
     if (!user) return;
     const cleanLayers = layers
-      .map((l) => ({ glaze: l.glaze.trim(), application: l.application || null }))
-      .filter((l) => l.glaze);
+      .map((l) => ({ type: l.type, name: l.name.trim(), application: l.application || null }))
+      .filter((l) => l.name);
     if (!photos.length) return setError('Add at least one photo of the result.');
-    if (!cleanLayers.length) return setError('Add at least one glaze.');
+    if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
     if (!clay.trim()) return setError('Choose the clay.');
-    if (!firing) return setError('Choose oxidation or reduction.');
 
     setError(null);
     const uploaded: Photo[] = [];
@@ -83,7 +83,6 @@ function ComboForm({ initial }: { initial: Combo | null }) {
         title: title.trim() || null,
         clay: clay.trim(),
         firing,
-        studio: studio.trim() || null,
         layers: cleanLayers,
         description: description.trim() || null,
         photos: finalPhotos,
@@ -95,7 +94,7 @@ function ComboForm({ initial }: { initial: Combo | null }) {
         const kept = new Set(finalPhotos.map((p) => p.path));
         await backend.deletePhotos(initial.photos.filter((p) => !kept.has(p.path)));
       }
-      writePref('last', { clay: input.clay, firing } satisfies LastUsed);
+      writePref('last', { clay: input.clay } satisfies LastUsed);
       invalidateComboCache();
       navigate(`/c/${saved.id}`, { replace: true });
     } catch (err) {
@@ -109,97 +108,86 @@ function ComboForm({ initial }: { initial: Combo | null }) {
 
   return (
     <form className="form" onSubmit={onSubmit}>
-      <h1>{initial ? 'Edit combo' : 'Add a combo'}</h1>
+      <h1 className="page-title">{initial ? 'Edit combo' : 'Add a combo'}</h1>
 
       <fieldset disabled={saving}>
         <section className="form-section">
-          <h2>Photos</h2>
-          <p className="hint">Finished pieces or test tiles. The first photo is the cover.</p>
+          <h2 className="section-title">Photos</h2>
+          <p className="section-supporting">Finished pieces or test tiles. The first photo is the cover.</p>
           <PhotoPicker photos={photos} onChange={setPhotos} />
         </section>
 
         <section className="form-section">
-          <h2>Glazes</h2>
-          <p className="hint">In the order you applied them — glaze 1 first, then each one on top.</p>
+          <h2 className="section-title">Glazes, slips &amp; oxides</h2>
+          <p className="section-supporting">
+            In the order you applied them. Add a slip or oxide only if you used one; one that went under the glaze
+            comes before it.
+          </p>
           <LayerEditor layers={layers} onChange={setLayers} />
         </section>
 
         <section className="form-section">
-          <h2>Clay &amp; firing</h2>
-          <label className="field">
-            <span>Clay</span>
-            <ChoiceField
-              id="clay"
-              value={clay}
-              options={CLAYS}
-              onChange={setClay}
-              placeholder="Choose clay"
-              otherPlaceholder="Clay name"
-              required
-            />
-          </label>
-          <div className="field" role="radiogroup" aria-labelledby="firing-label">
-            <span id="firing-label">Firing</span>
-            <div className="segmented">
-              {FIRINGS.map((f) => (
-                <label key={f.value} className={firing === f.value ? 'selected' : ''}>
-                  <input
-                    type="radio"
-                    name="firing"
-                    value={f.value}
-                    checked={firing === f.value}
-                    required
-                    onChange={() => setFiring(f.value)}
-                  />
-                  {f.label}
-                </label>
-              ))}
-            </div>
+          <h2 className="section-title">Clay &amp; firing</h2>
+          <ChoiceField
+            id="clay"
+            label="Clay"
+            value={clay}
+            options={CLAYS}
+            onChange={setClay}
+            placeholder="Choose clay"
+            otherLabel="Clay name"
+            required
+          />
+          <div className="segmented" role="radiogroup" aria-label="Firing">
+            {FIRINGS.map((f) => (
+              <label key={f.value} className={`segment${firing === f.value ? ' selected' : ''}`}>
+                <input
+                  type="radio"
+                  name="firing"
+                  value={f.value}
+                  checked={firing === f.value}
+                  onChange={() => setFiring(f.value)}
+                />
+                {firing === f.value && <Icon name="check" />}
+                {f.label}
+              </label>
+            ))}
           </div>
-          <label className="field">
-            <span>
-              Studio <span className="muted">(where it was fired)</span>
-            </span>
-            <ChoiceField
-              id="studio"
-              value={studio}
-              options={STUDIOS}
-              onChange={setStudio}
-              placeholder="Not specified"
-              otherPlaceholder="Studio name"
-            />
-          </label>
         </section>
 
         <section className="form-section">
-          <h2>Notes</h2>
-          <label className="field">
-            <span>
-              Name <span className="muted">(optional)</span>
+          <h2 className="section-title">Notes</h2>
+          <TextField
+            label="Name (optional)"
+            value={title}
+            maxLength={120}
+            onChange={(e) => setTitle(e.target.value)}
+            supportingText={
+              layers.some((l) => l.name)
+                ? `Leave empty to use "${layers.filter((l) => l.name).map(layerLabel).join(' + ')}"`
+                : 'Leave empty to name it after the glazes'
+            }
+          />
+          <TextArea
+            label="How you did it"
+            rows={5}
+            value={description}
+            maxLength={2000}
+            onChange={(e) => setDescription(e.target.value)}
+            supportingText="e.g. Tenmoku dipped 3 sec, Midnight Blue poured over the top. Careful, runny!"
+          />
+          <label className="switch-row">
+            <span className="switch-text">
+              <span>Keep private</span>
+              <span className="switch-supporting">Only you can see it. Handy for your own notes.</span>
             </span>
             <input
-              type="text"
-              value={title}
-              maxLength={120}
-              placeholder={layers.map((l) => l.glaze).filter(Boolean).join(' + ') || 'e.g. Blue rim tenmoku'}
-              onChange={(e) => setTitle(e.target.value)}
+              type="checkbox"
+              role="switch"
+              className="switch"
+              checked={isPrivate}
+              onChange={(e) => setIsPrivate(e.target.checked)}
             />
-          </label>
-          <label className="field">
-            <span>How you did it</span>
-            <textarea
-              rows={5}
-              value={description}
-              maxLength={2000}
-              placeholder="e.g. Tenmoku dipped 3 sec, Chun Blue poured over the top. Careful — runny, keep it well above the foot!"
-              onChange={(e) => setDescription(e.target.value)}
-            />
-          </label>
-          <label className="checkbox">
-            <input type="checkbox" checked={isPrivate} onChange={(e) => setIsPrivate(e.target.checked)} />
-            <span>
-              Keep private <span className="muted">— only you can see it (handy for your own notes)</span>
-            </span>
           </label>
         </section>
       </fieldset>
@@ -211,13 +199,14 @@ function ComboForm({ initial }: { initial: Combo | null }) {
       )}
 
       <div className="form-actions">
-        <Link to={initial ? `/c/${initial.id}` : '/'} className="btn btn-ghost">
+        <Link to={initial ? `/c/${initial.id}` : '/'} className="btn btn-text">
           Cancel
         </Link>
-        <button type="submit" className="btn btn-primary" disabled={saving}>
+        <button type="submit" className="btn btn-filled" disabled={saving}>
           {status ?? (initial ? 'Save changes' : isPrivate ? 'Save combo' : 'Share combo')}
         </button>
       </div>
+      {saving && <div className="linear-progress" role="progressbar" aria-label={status ?? 'Saving'} />}
     </form>
   );
 }

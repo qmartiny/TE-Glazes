@@ -5,28 +5,15 @@ import type { Combo, Photo, Profile } from '../../types';
 
 interface TileSpec {
   clay: string;
-  glazes: string[]; // first = base layer
+  base: [string, string]; // first layer, top-to-bottom gradient
+  top?: [string, string]; // layer poured over the top
   speckle?: boolean;
 }
 
-const COLORS: Record<string, [string, string]> = {
-  Tenmoku: ['#7a3b1d', '#2a1711'],
-  'Chun Blue': ['#b6cde0', '#7f9fbe'],
-  Celadon: ['#c3d9c4', '#8db39a'],
-  Shino: ['#ecd2b4', '#d0855a'],
-  'Satin Black': ['#3a3533', '#1e1b1a'],
-  Nuka: ['#f1ede4', '#c9d0d6'],
-  Honey: ['#e0a94c', '#9a5a1c'],
-  'Kaki / Iron Red': ['#a5532a', '#6b2a15'],
-  'Matt White': ['#f3efe7', '#ddd5c8'],
-  'Copper Red': ['#b2333a', '#5e1418'],
-};
-
 let tileCount = 0;
 
-function tileSvg({ clay, glazes, speckle }: TileSpec): string {
+function tileSvg({ clay, base, top, speckle }: TileSpec): string {
   const n = tileCount++;
-  const [base, top] = glazes.map((g) => COLORS[g] ?? ['#ddd', '#bbb']);
   const second = top
     ? `<path clip-path="url(#c${n})" fill="url(#g2${n})" d="M220 40H580V230Q560 262 540 236Q528 330 514 336Q500 326 492 246Q462 268 432 238Q420 300 408 304Q396 298 390 248Q352 270 318 236Q304 286 292 290Q280 284 274 246Q248 262 220 234Z"/>`
     : '';
@@ -71,24 +58,24 @@ function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate' | 'title'> & Parti
   return { title: null, isPrivate: false, updatedAt: c.createdAt, ...c };
 }
 
+const glaze = (name: string, application: string | null = null) => ({ type: 'glaze' as const, name, application });
+const slip = (name: string, application: string | null = null) => ({ type: 'slip' as const, name, application });
+const oxide = (name: string, application: string | null = null) => ({ type: 'oxide' as const, name, application });
+
 export function demoCombos(): StoredCombo[] {
   return [
     combo({
       id: 'demo-1',
       userId: 'demo-maya',
       title: 'Blue rim tenmoku',
-      clay: 'Buff stoneware',
+      clay: 'Craft Crank',
       firing: 'reduction',
-      studio: 'Hoxton',
-      layers: [
-        { glaze: 'Tenmoku', application: 'Dipped' },
-        { glaze: 'Chun Blue', application: 'Poured' },
-      ],
+      layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')],
       description:
-        'Tenmoku dipped for 3 seconds, then Chun Blue poured over the top third.\nChun runs a lot over tenmoku — stop it at least 2 cm above the foot!',
+        'Tenmoku dipped for 3 seconds, then Midnight Blue poured over the top third.\nRuns a lot over tenmoku, so stop it at least 2 cm above the foot!',
       photos: [
-        tilePhoto({ clay: '#cdb391', glazes: ['Tenmoku', 'Chun Blue'] }),
-        tilePhoto({ clay: '#cdb391', glazes: ['Tenmoku'] }),
+        tilePhoto({ clay: '#c9ab86', base: ['#7a3b1d', '#2a1711'], top: ['#5a6fae', '#26336a'], speckle: true }),
+        tilePhoto({ clay: '#c9ab86', base: ['#7a3b1d', '#2a1711'], speckle: true }),
       ],
       createdAt: '2026-09-28T18:20:00Z',
     }),
@@ -97,64 +84,52 @@ export function demoCombos(): StoredCombo[] {
       userId: 'demo-sam',
       clay: 'Porcelain',
       firing: 'reduction',
-      studio: 'Leyton',
-      layers: [{ glaze: 'Celadon', application: 'Dipped' }],
-      description: 'Two quick dips. Pools beautifully in carved lines — great on fluted pieces.',
-      photos: [tilePhoto({ clay: '#f4f1ec', glazes: ['Celadon'] })],
+      layers: [glaze('Faux Celadon', 'Dipped')],
+      description: 'Two quick dips. Pools beautifully in carved lines, great on fluted pieces.',
+      photos: [tilePhoto({ clay: '#f4f1ec', base: ['#c3d9c4', '#8db39a'] })],
       createdAt: '2026-09-20T12:00:00Z',
     }),
     combo({
       id: 'demo-3',
-      userId: 'demo-jo',
-      title: 'Snowy black',
-      clay: 'Dark / black stoneware',
+      userId: 'demo-sam',
+      title: 'Cobalt brushwork',
+      clay: 'Special White',
       firing: 'reduction',
-      studio: 'Hoxton',
-      layers: [
-        { glaze: 'Satin Black', application: 'Dipped' },
-        { glaze: 'Nuka', application: 'Brushed' },
-      ],
-      description: 'Nuka brushed thickly on the rim only (2 coats). Breaks to a soft blue-white over the black.',
-      photos: [tilePhoto({ clay: '#3d3330', glazes: ['Satin Black', 'Nuka'] })],
+      layers: [slip('Blue', 'Brushed'), oxide('Cobalt Oxide', 'Sponged'), glaze('Transparent', 'Dipped')],
+      description:
+        'Blue slip brushed on leather-hard, cobalt oxide sponged on after bisque and wiped back, then a thin dip of Transparent.',
+      photos: [tilePhoto({ clay: '#ece7df', base: ['#d9e1ef', '#9fb2d6'], top: ['#3d56a6', '#1f2f73'] })],
       createdAt: '2026-09-12T09:30:00Z',
     }),
     combo({
       id: 'demo-4',
-      userId: 'demo-maya',
-      clay: 'Speckled stoneware',
-      firing: 'oxidation',
-      studio: 'Hoxton',
-      layers: [
-        { glaze: 'Honey', application: 'Dipped' },
-        { glaze: 'Kaki / Iron Red', application: 'Dipped' },
-      ],
-      description: 'Double dip — honey first, kaki over the top half. Speckles come through nicely in oxidation.',
-      photos: [tilePhoto({ clay: '#d8c6a8', glazes: ['Honey', 'Kaki / Iron Red'], speckle: true })],
-      createdAt: '2026-08-30T15:00:00Z',
+      userId: 'demo-jo',
+      title: 'Snowy black',
+      clay: 'Vulcan Medium Black',
+      firing: 'reduction',
+      layers: [glaze('Matt Black', 'Dipped'), glaze('Shiny White', 'Brushed')],
+      description: 'Shiny White brushed thickly on the rim only (2 coats). Breaks blue-white over the black.',
+      photos: [tilePhoto({ clay: '#3d3330', base: ['#3a3533', '#1e1b1a'], top: ['#f4f2ee', '#c9d3dc'] })],
+      createdAt: '2026-09-02T15:00:00Z',
     }),
     combo({
       id: 'demo-5',
-      userId: 'demo-sam',
-      clay: 'Smooth white stoneware',
-      firing: 'reduction',
-      studio: 'Leyton',
-      layers: [
-        { glaze: 'Matt White', application: 'Dipped' },
-        { glaze: 'Copper Red', application: 'Sprayed' },
-      ],
-      description: 'Light spray of copper red over matt white. Thin = pink, thick = deep red. Top shelf of the kiln went greener.',
-      photos: [tilePhoto({ clay: '#ece7df', glazes: ['Matt White', 'Copper Red'] })],
+      userId: 'demo-maya',
+      clay: 'Flecked Stoneware',
+      firing: 'oxidation',
+      layers: [glaze('Honey', 'Dipped'), glaze('Mustard', 'Dipped')],
+      description: 'Double dip: Honey first, Mustard over the top half. The flecks come through nicely.',
+      photos: [tilePhoto({ clay: '#d8c6a8', base: ['#e0a94c', '#9a5a1c'], top: ['#dcb544', '#a07d1d'], speckle: true })],
       createdAt: '2026-08-14T11:00:00Z',
     }),
     combo({
       id: 'demo-6',
       userId: 'demo-jo',
-      clay: 'Grogged / crank stoneware',
+      clay: 'Draycott',
       firing: 'reduction',
-      studio: 'Hoxton',
-      layers: [{ glaze: 'Shino', application: 'Poured' }],
-      description: 'Single pour, quite thick. Lovely carbon trapping on the crank.',
-      photos: [tilePhoto({ clay: '#bfa281', glazes: ['Shino'], speckle: true })],
+      layers: [oxide('Red Iron Oxide', 'Wiped back'), glaze('Oribe', 'Poured')],
+      description: 'Red iron oxide wiped back on textured bisque, then a single pour of Oribe. Goes dark where the oxide stays.',
+      photos: [tilePhoto({ clay: '#bfa281', base: ['#6f8f55', '#2f4a2c'], speckle: true })],
       createdAt: '2026-07-30T16:45:00Z',
     }),
   ];

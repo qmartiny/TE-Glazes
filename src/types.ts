@@ -14,9 +14,12 @@ export interface ProfileInput {
   bio: string | null;
 }
 
-/** One glaze in a combination. Layers are ordered: index 0 goes on first. */
-export interface GlazeLayer {
-  glaze: string;
+export type LayerType = 'glaze' | 'slip' | 'oxide';
+
+/** One glaze, slip or oxide in a combination. Layers are ordered: index 0 goes on first. */
+export interface Layer {
+  type: LayerType;
+  name: string;
   application: string | null;
 }
 
@@ -38,8 +41,7 @@ export interface Combo {
   title: string | null;
   clay: string;
   firing: Firing;
-  studio: string | null;
-  layers: GlazeLayer[];
+  layers: Layer[];
   description: string | null;
   photos: Photo[];
   isPrivate: boolean;
@@ -51,8 +53,7 @@ export interface ComboInput {
   title: string | null;
   clay: string;
   firing: Firing;
-  studio: string | null;
-  layers: GlazeLayer[];
+  layers: Layer[];
   description: string | null;
   photos: Photo[];
   isPrivate: boolean;
@@ -61,8 +62,9 @@ export interface ComboInput {
 export interface ComboFilters {
   clay?: string;
   glaze?: string;
+  slip?: string;
+  oxide?: string;
   firing?: Firing;
-  studio?: string;
   user?: string;
 }
 
@@ -71,8 +73,7 @@ export interface FacetRow {
   userId: string;
   clay: string;
   firing: Firing;
-  studio: string | null;
-  layers: GlazeLayer[];
+  layers: Layer[];
 }
 
 export interface AuthUser {

@@ -7,7 +7,11 @@ import { createSupabaseBackend } from './supabase';
 const url = (import.meta.env.VITE_SUPABASE_URL as string | undefined) || SUPABASE_URL;
 const anonKey = (import.meta.env.VITE_SUPABASE_ANON_KEY as string | undefined) || SUPABASE_ANON_KEY;
 
+// VITE_DEMO=true forces demo mode, e.g. to try changes without touching real data.
+const demo = import.meta.env.VITE_DEMO === 'true';
+
 /** Supabase when configured, otherwise demo mode (data stays in this browser). */
-export const backend: Backend = url && anonKey ? createSupabaseBackend(url, anonKey) : createLocalBackend();
+export const backend: Backend =
+  !demo && url && anonKey ? createSupabaseBackend(url, anonKey) : createLocalBackend();
 
 export type { Backend, Page } from './backend';

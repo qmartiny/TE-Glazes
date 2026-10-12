@@ -6,6 +6,7 @@ import { paramsFromFilters } from '../lib/filters';
 import { errorMessage } from '../lib/useAsync';
 import type { Combo, ComboFilters } from '../types';
 import { ComboCard } from './ComboCard';
+import { Icon } from './Icon';
 
 // Remember what was loaded per filter set, so going "back" from a combo
 // shows the list instantly (and at the same scroll position).
@@ -68,9 +69,10 @@ export function ComboList({ filters, empty, showAuthor = true }: Props) {
 
   if (error && !page) {
     return (
-      <div className="notice notice-error">
+      <div className="empty">
+        <Icon name="error" className="empty-icon" />
         <p>Couldn't load combos: {error}</p>
-        <button className="btn" onClick={() => setNonce((n) => n + 1)}>
+        <button className="btn btn-tonal" onClick={() => setNonce((n) => n + 1)}>
           Try again
         </button>
       </div>
@@ -82,8 +84,8 @@ export function ComboList({ filters, empty, showAuthor = true }: Props) {
       <div className="grid" aria-busy="true" aria-label="Loading">
         {Array.from({ length: 6 }, (_, i) => (
           <div key={i} className="card card-skeleton">
-            <div className="card-img" />
-            <div className="card-body">
+            <div className="card-media" />
+            <div className="card-content">
               <div className="skeleton-line" />
               <div className="skeleton-line short" />
             </div>
@@ -105,7 +107,7 @@ export function ComboList({ filters, empty, showAuthor = true }: Props) {
       {error && <p className="form-error">{error}</p>}
       {page.hasMore && (
         <div className="load-more">
-          <button className="btn" onClick={loadMore} disabled={loadingMore}>
+          <button className="btn btn-outlined" onClick={loadMore} disabled={loadingMore}>
             {loadingMore ? 'Loading…' : 'Load more'}
           </button>
         </div>

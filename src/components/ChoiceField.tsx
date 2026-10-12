@@ -1,27 +1,42 @@
 import { useState } from 'react';
+import { SelectField, TextField } from './Fields';
 
 const OTHER = '__other__';
 
 interface Props {
   id: string;
+  label: string;
   value: string;
   options: readonly string[];
   onChange: (value: string) => void;
   placeholder: string;
-  otherPlaceholder?: string;
+  otherLabel?: string;
   required?: boolean;
+  /** Overrides the visible label for screen readers (e.g. "Layer 2: slip"). */
   'aria-label'?: string;
 }
 
 /** A dropdown of the studio's usual options, plus "Other…" to type anything. */
-export function ChoiceField({ id, value, options, onChange, placeholder, otherPlaceholder, required, ...rest }: Props) {
+export function ChoiceField({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  placeholder,
+  otherLabel,
+  required,
+  ...rest
+}: Props) {
   const [custom, setCustom] = useState(() => value !== '' && !options.includes(value));
+  const ariaLabel = rest['aria-label'];
 
   return (
     <div className="choice">
-      <select
+      <SelectField
         id={id}
-        aria-label={rest['aria-label']}
+        label={label}
+        aria-label={ariaLabel}
         value={custom ? OTHER : value}
         required={required && !custom}
         onChange={(e) => {
@@ -39,16 +54,15 @@ export function ChoiceField({ id, value, options, onChange, placeholder, otherPl
           </option>
         ))}
         <option value={OTHER}>Other…</option>
-      </select>
+      </SelectField>
       {custom && (
-        <input
-          type="text"
+        <TextField
+          label={otherLabel ?? `${label} name`}
+          aria-label={ariaLabel ? `${ariaLabel} (other)` : undefined}
           value={value}
           required={required}
           maxLength={80}
           autoFocus
-          placeholder={otherPlaceholder ?? 'Type a name'}
-          aria-label={`${rest['aria-label'] ?? placeholder} (other)`}
           onChange={(e) => onChange(e.target.value)}
         />
       )}

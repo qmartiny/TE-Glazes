@@ -6,8 +6,10 @@ const input: ComboInput = {
   title: null,
   clay: 'Porcelain',
   firing: 'reduction',
-  studio: 'Hoxton',
-  layers: [{ glaze: 'Celadon', application: 'Dipped' }],
+  layers: [
+    { type: 'slip', name: 'White', application: 'Brushed' },
+    { type: 'glaze', name: 'Faux Celadon', application: 'Dipped' },
+  ],
   description: 'Two dips',
   photos: [{ path: 'p', thumb: 't', width: 1, height: 1 }],
   isPrivate: false,
@@ -38,9 +40,8 @@ describe('demo backend', () => {
     expect(created.author?.displayName).toBe('Me');
     const mine = await backend.listCombos({ user: user!.id }, 0, 10);
     expect(mine.items.map((c) => c.id)).toEqual([created.id]);
-    expect((await backend.listCombos({ glaze: 'Celadon', clay: 'Porcelain' }, 0, 10)).items.map((c) => c.id)).toContain(
-      created.id,
-    );
+    const filtered = await backend.listCombos({ glaze: 'Faux Celadon', slip: 'White', clay: 'Porcelain' }, 0, 10);
+    expect(filtered.items.map((c) => c.id)).toEqual([created.id]);
 
     const updated = await backend.updateCombo(created.id, { ...input, title: 'Pooling celadon' });
     expect(updated.title).toBe('Pooling celadon');
