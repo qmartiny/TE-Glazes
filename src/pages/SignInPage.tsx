@@ -2,6 +2,7 @@ import { useState, type FormEvent } from 'react';
 import { Navigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
+import { TextField } from '../components/Fields';
 import { APP_NAME, STUDIOS } from '../config';
 import { backend } from '../lib/api';
 import { errorMessage } from '../lib/useAsync';
@@ -64,17 +65,21 @@ export function SignInPage() {
     }
   }
 
+  const submitLabel = mode === 'signup' ? 'Create account' : mode === 'reset' ? 'Send reset link' : 'Sign in';
+
   return (
     <div className="narrow">
       <form className="form auth-form" onSubmit={onSubmit}>
-        <h1>{mode === 'signup' ? `Join ${APP_NAME}` : mode === 'reset' ? 'Reset password' : 'Sign in'}</h1>
+        <h1 className="page-title">
+          {mode === 'signup' ? `Join ${APP_NAME}` : mode === 'reset' ? 'Reset password' : 'Welcome back'}
+        </h1>
         {mode !== 'reset' && (
-          <div className="segmented tabs" role="tablist">
+          <div className="tabs" role="tablist">
             <button
               type="button"
               role="tab"
               aria-selected={mode === 'signin'}
-              className={mode === 'signin' ? 'selected' : ''}
+              className={`tab${mode === 'signin' ? ' selected' : ''}`}
               onClick={() => switchTo('signin')}
             >
               Sign in
@@ -83,7 +88,7 @@ export function SignInPage() {
               type="button"
               role="tab"
               aria-selected={mode === 'signup'}
-              className={mode === 'signup' ? 'selected' : ''}
+              className={`tab${mode === 'signup' ? ' selected' : ''}`}
               onClick={() => switchTo('signup')}
             >
               Create account
@@ -99,53 +104,45 @@ export function SignInPage() {
         <fieldset disabled={busy}>
           {mode === 'signup' && (
             <>
-              <label className="field">
-                <span>Your name</span>
-                <input
-                  type="text"
-                  value={displayName}
-                  required
-                  maxLength={60}
-                  autoComplete="name"
-                  onChange={(e) => setDisplayName(e.target.value)}
-                />
-              </label>
-              <label className="field">
-                <span>Studio you go to</span>
-                <ChoiceField
-                  id="signup-studio"
-                  value={studio}
-                  options={STUDIOS}
-                  onChange={setStudio}
-                  placeholder="Choose studio"
-                  otherPlaceholder="Studio name"
-                />
-              </label>
+              <TextField
+                label="Your name"
+                value={displayName}
+                required
+                maxLength={60}
+                autoComplete="name"
+                onChange={(e) => setDisplayName(e.target.value)}
+              />
+              <ChoiceField
+                id="signup-studio"
+                label="Studio you go to"
+                value={studio}
+                options={STUDIOS}
+                onChange={setStudio}
+                placeholder="Not specified"
+                otherLabel="Studio name"
+              />
             </>
           )}
-          <label className="field">
-            <span>Email</span>
-            <input
-              type="email"
-              value={email}
-              required
-              autoComplete="email"
-              inputMode="email"
-              onChange={(e) => setEmail(e.target.value)}
-            />
-          </label>
+          <TextField
+            label="Email"
+            type="email"
+            value={email}
+            required
+            autoComplete="email"
+            inputMode="email"
+            onChange={(e) => setEmail(e.target.value)}
+          />
           {mode !== 'reset' && (
-            <label className="field">
-              <span>Password</span>
-              <input
-                type="password"
-                value={password}
-                required
-                minLength={6}
-                autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-                onChange={(e) => setPassword(e.target.value)}
-              />
-            </label>
+            <TextField
+              label="Password"
+              type="password"
+              value={password}
+              required
+              minLength={6}
+              autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
+              supportingText={mode === 'signup' ? 'At least 6 characters' : undefined}
+              onChange={(e) => setPassword(e.target.value)}
+            />
           )}
         </fieldset>
 
@@ -155,31 +152,25 @@ export function SignInPage() {
           </p>
         )}
 
-        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
-          {busy
-            ? 'Please wait…'
-            : mode === 'signup'
-              ? 'Create account'
-              : mode === 'reset'
-                ? 'Send reset link'
-                : 'Sign in'}
+        <button type="submit" className="btn btn-filled btn-block" disabled={busy}>
+          {busy ? 'Please wait…' : submitLabel}
         </button>
 
-        <p className="auth-alt">
-          {mode === 'signin' && (
-            <button type="button" className="link-btn" onClick={() => switchTo('reset')}>
-              Forgot your password?
-            </button>
-          )}
-          {mode === 'reset' && (
-            <button type="button" className="link-btn" onClick={() => switchTo('signin')}>
-              Back to sign in
-            </button>
-          )}
-        </p>
-        <p className="hint">Anyone can browse. You need an account to add combos.</p>
+        {mode === 'signin' && (
+          <button type="button" className="btn btn-text btn-center" onClick={() => switchTo('reset')}>
+            Forgot your password?
+          </button>
+        )}
+        {mode === 'reset' && (
+          <button type="button" className="btn btn-text btn-center" onClick={() => switchTo('signin')}>
+            Back to sign in
+          </button>
+        )}
+        <p className="section-supporting center">Anyone can browse. You need an account to add combos.</p>
         {backend.mode === 'demo' && (
-          <p className="hint">Demo mode: use any email and password — the account only exists in this browser.</p>
+          <p className="section-supporting center">
+            Demo mode: use any email and password. The account only exists in this browser.
+          </p>
         )}
       </form>
     </div>

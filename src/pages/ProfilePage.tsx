@@ -1,6 +1,7 @@
 import { Link, useParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ComboList } from '../components/ComboList';
+import { Icon } from '../components/Icon';
 import { backend } from '../lib/api';
 import { formatDate, initials } from '../lib/format';
 import { useAsync } from '../lib/useAsync';
@@ -23,8 +24,8 @@ export function ProfilePage() {
           {initials(profile.displayName)}
         </div>
         <div>
-          <h1>{isMe ? 'My combos' : profile.displayName}</h1>
-          <p className="muted">
+          <h1 className="page-title">{isMe ? 'My combos' : profile.displayName}</h1>
+          <p className="section-supporting">
             {isMe && `${profile.displayName} · `}
             {profile.studio ? `${profile.studio} · ` : ''}
             Member since {formatDate(profile.createdAt)}
@@ -32,8 +33,8 @@ export function ProfilePage() {
           {profile.bio && <p className="bio">{profile.bio}</p>}
         </div>
         {isMe && (
-          <Link to="/account" className="btn btn-small profile-edit">
-            Edit profile
+          <Link to="/account" className="btn btn-outlined profile-edit">
+            <Icon name="edit" /> Edit profile
           </Link>
         )}
       </section>
@@ -44,9 +45,10 @@ export function ProfilePage() {
         empty={
           isMe ? (
             <div className="empty">
-              <p>You haven’t added any combos yet. Your combos — shared or private — will appear here.</p>
-              <Link to="/new" className="btn btn-primary">
-                Add your first combo
+              <Icon name="palette" className="empty-icon" />
+              <p>You haven’t added any combos yet. Everything you add, shared or private, shows up here.</p>
+              <Link to="/new" className="btn btn-filled">
+                <Icon name="add" /> Add your first combo
               </Link>
             </div>
           ) : (

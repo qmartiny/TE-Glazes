@@ -2,7 +2,8 @@ import { APPLICATIONS } from '../config';
 import { LAYER_TYPES, layerTypeInfo } from '../lib/layers';
 import type { LayerType } from '../types';
 import { ChoiceField } from './ChoiceField';
-import { CloseIcon, DownIcon, UpIcon } from './Icons';
+import { SelectField } from './Fields';
+import { Icon } from './Icon';
 
 export interface LayerDraft {
   key: string;
@@ -39,38 +40,14 @@ export function LayerEditor({ layers, onChange }: Props) {
       {layers.map((layer, i) => {
         const info = layerTypeInfo(layer.type);
         return (
-          <div key={layer.key} className="layer-row">
-            <span className="layer-num" aria-hidden="true">
-              {i + 1}
-            </span>
-            <div className="layer-fields">
-              <span className="layer-type">{info.label}</span>
-              <ChoiceField
-                id={`layer-${layer.key}`}
-                aria-label={`Layer ${i + 1}: ${info.label.toLowerCase()}`}
-                value={layer.name}
-                options={info.options}
-                placeholder={`Choose ${info.label.toLowerCase()}`}
-                otherPlaceholder={`${info.label} name`}
-                required
-                onChange={(name) => update(i, { name })}
-              />
-              <select
-                aria-label={`How layer ${i + 1} was applied`}
-                value={layer.application}
-                onChange={(e) => update(i, { application: e.target.value })}
-              >
-                <option value="">How applied? (optional)</option>
-                {APPLICATIONS.map((a) => (
-                  <option key={a} value={a}>
-                    {a}
-                  </option>
-                ))}
-              </select>
-            </div>
-            <div className="layer-actions">
+          <div key={layer.key} className="layer-card">
+            <div className="layer-card-head">
+              <span className="layer-num" aria-hidden="true">
+                {i + 1}
+              </span>
+              <span className="layer-card-title">{info.label}</span>
               {layers.length > 1 && (
-                <>
+                <span className="layer-actions">
                   <button
                     type="button"
                     className="icon-btn"
@@ -78,7 +55,7 @@ export function LayerEditor({ layers, onChange }: Props) {
                     disabled={i === 0}
                     onClick={() => move(i, -1)}
                   >
-                    <UpIcon />
+                    <Icon name="arrow_upward" />
                   </button>
                   <button
                     type="button"
@@ -87,7 +64,7 @@ export function LayerEditor({ layers, onChange }: Props) {
                     disabled={i === layers.length - 1}
                     onClick={() => move(i, 1)}
                   >
-                    <DownIcon />
+                    <Icon name="arrow_downward" />
                   </button>
                   <button
                     type="button"
@@ -95,24 +72,52 @@ export function LayerEditor({ layers, onChange }: Props) {
                     aria-label={`Remove layer ${i + 1}`}
                     onClick={() => onChange(layers.filter((_, j) => j !== i))}
                   >
-                    <CloseIcon />
+                    <Icon name="close" />
                   </button>
-                </>
+                </span>
               )}
+            </div>
+            <div className="layer-fields">
+              <ChoiceField
+                id={`layer-${layer.key}`}
+                label={`Which ${info.label.toLowerCase()}`}
+                aria-label={`Layer ${i + 1}: ${info.label.toLowerCase()}`}
+                value={layer.name}
+                options={info.options}
+                placeholder={`Choose ${info.label.toLowerCase()}`}
+                otherLabel={`${info.label} name`}
+                required
+                onChange={(name) => update(i, { name })}
+              />
+              <SelectField
+                label="How applied"
+                aria-label={`How layer ${i + 1} was applied`}
+                value={layer.application}
+                onChange={(e) => update(i, { application: e.target.value })}
+              >
+                <option value="">Not specified</option>
+                {APPLICATIONS.map((a) => (
+                  <option key={a} value={a}>
+                    {a}
+                  </option>
+                ))}
+              </SelectField>
             </div>
           </div>
         );
       })}
       {layers.length < MAX_LAYERS && (
-        <div className="layer-add">
+        <div className="chip-row chip-row-wrap" role="group" aria-label="Add a layer">
           {LAYER_TYPES.map((t) => (
             <button
               key={t.type}
               type="button"
-              className="btn btn-small"
+              className="chip chip-assist"
+              aria-label={`Add ${t.label.toLowerCase()}`}
               onClick={() => onChange([...layers, newLayer(t.type)])}
             >
-              + {t.label}
+              <Icon name="add" className="chip-leading" />
+              <span className="chip-text">{t.label}</span>
             </button>
           ))}
         </div>

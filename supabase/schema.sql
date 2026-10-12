@@ -73,7 +73,7 @@ create table if not exists public.combinations (
   title text check (char_length(title) <= 120),
   clay text not null check (char_length(clay) between 1 and 80),
   firing text not null check (firing in ('oxidation', 'reduction')),
-  studio text check (char_length(studio) <= 60),
+  studio text check (char_length(studio) <= 60), -- no longer used: studio lives on the profile
   -- Ordered layers, first applied first:
   -- [{"type": "slip", "name": "Blue", "application": "Brushed"}, {"type": "glaze", "name": "Tenmoku", ...}, ...]
   layers jsonb not null check (

@@ -227,7 +227,7 @@ export function createLocalBackend(): Backend {
     async listFacetRows() {
       const s = await getState();
       return visible(s).map(
-        (c): FacetRow => ({ userId: c.userId, clay: c.clay, firing: c.firing, studio: c.studio, layers: c.layers }),
+        (c): FacetRow => ({ userId: c.userId, clay: c.clay, firing: c.firing, layers: c.layers }),
       );
     },
 

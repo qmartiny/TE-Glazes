@@ -2,6 +2,7 @@ import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ComboList } from '../components/ComboList';
 import { FilterBar } from '../components/FilterBar';
+import { Icon } from '../components/Icon';
 import { APP_TAGLINE } from '../config';
 import { backend } from '../lib/api';
 import { computeFacets, filtersFromParams, hasFilters, matchesFilters, paramsFromFilters } from '../lib/filters';
@@ -25,8 +26,8 @@ export function BrowsePage() {
   return (
     <>
       <section className="intro">
-        <h1>Glaze combinations</h1>
-        <p className="muted">{APP_TAGLINE}. Filter by glaze, clay, firing or potter.</p>
+        <h1 className="page-title">Glaze combinations</h1>
+        <p className="section-supporting">{APP_TAGLINE}.</p>
       </section>
 
       <FilterBar filters={filters} facets={facets} profiles={profiles.data ?? []} onChange={setFilters} />
@@ -41,16 +42,18 @@ export function BrowsePage() {
         empty={
           hasFilters(filters) ? (
             <div className="empty">
+              <Icon name="search_off" className="empty-icon" />
               <p>No combos match these filters.</p>
-              <button className="btn" onClick={() => setFilters({})}>
+              <button className="btn btn-tonal" onClick={() => setFilters({})}>
                 Clear filters
               </button>
             </div>
           ) : (
             <div className="empty">
-              <p>No combos yet — be the first to share one!</p>
-              <Link to="/new" className="btn btn-primary">
-                Add a combo
+              <Icon name="palette" className="empty-icon" />
+              <p>No combos yet. Be the first to share one!</p>
+              <Link to="/new" className="btn btn-filled">
+                <Icon name="add" /> Add a combo
               </Link>
             </div>
           )

@@ -41,7 +41,6 @@ export interface Combo {
   title: string | null;
   clay: string;
   firing: Firing;
-  studio: string | null;
   layers: Layer[];
   description: string | null;
   photos: Photo[];
@@ -54,7 +53,6 @@ export interface ComboInput {
   title: string | null;
   clay: string;
   firing: Firing;
-  studio: string | null;
   layers: Layer[];
   description: string | null;
   photos: Photo[];
@@ -67,7 +65,6 @@ export interface ComboFilters {
   slip?: string;
   oxide?: string;
   firing?: Firing;
-  studio?: string;
   user?: string;
 }
 
@@ -76,7 +73,6 @@ export interface FacetRow {
   userId: string;
   clay: string;
   firing: Firing;
-  studio: string | null;
   layers: Layer[];
 }
 

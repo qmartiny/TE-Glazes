@@ -6,7 +6,6 @@ const input: ComboInput = {
   title: null,
   clay: 'Porcelain',
   firing: 'reduction',
-  studio: 'Hoxton',
   layers: [
     { type: 'slip', name: 'White', application: 'Brushed' },
     { type: 'glaze', name: 'Faux Celadon', application: 'Dipped' },

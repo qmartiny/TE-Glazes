@@ -3,7 +3,7 @@
 A small, mobile-friendly website where members of a pottery studio share the glaze combinations they use: think a very simplified [Glazy](https://glazy.org/) for one community.
 
 - **Share a combo**: add photos of pieces or test tiles, the clay, the glazes, slips and oxides in the order applied (with how each was applied), oxidation or reduction, and notes like "Glaze 1 dipped, glaze 2 poured on top, runny!"
-- **Browse and filter** by glaze, slip or oxide (each matches any layer), clay, firing, studio or potter. Filters live in the URL, so a filtered view can be shared as a link.
+- **Browse and filter** by glaze, slip or oxide (each matches any layer), clay, firing or potter. Filters live in the URL, so a filtered view can be shared as a link.
 - **Profiles**: name and studio, plus a page listing each person's combos. Mark a combo **private** to keep it as a personal note only you can see.
 - Anyone with the link can browse. You need an account to post.
 
@@ -50,7 +50,7 @@ On a phone, members can use **Share → Add to Home Screen** to get an app-like 
 Edit [`src/config.ts`](src/config.ts) to change:
 
 - the studio's **glazes, slips, oxides and clay bodies**
-- studio locations and application methods (dipped, poured, …)
+- the studio locations people can pick on their profile, and application methods (dipped, poured, …)
 - the site name
 
 These lists fill the dropdowns and filters. People can always pick **Other…** and type something that isn't listed, and those values show up in the filters too.

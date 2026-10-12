@@ -79,9 +79,10 @@ export const APPLICATIONS: string[] = [
   'Wiped back',
 ];
 
+// New combos default to the first one.
 export const FIRINGS = [
-  { value: 'reduction', label: 'Reduction' },
   { value: 'oxidation', label: 'Oxidation' },
+  { value: 'reduction', label: 'Reduction' },
 ] as const;
 
 export const MAX_PHOTOS = 6;

@@ -4,7 +4,7 @@ import { backend } from '../lib/api';
 import { preparePhoto } from '../lib/image';
 import { errorMessage } from '../lib/useAsync';
 import type { Photo, PreparedPhoto } from '../types';
-import { CameraIcon, CloseIcon } from './Icons';
+import { Icon } from './Icon';
 
 export type PhotoDraft =
   | { key: string; kind: 'existing'; photo: Photo }
@@ -69,7 +69,7 @@ export function PhotoPicker({ photos, onChange }: Props) {
               disabled={busy}
               onClick={() => onChange(photos.filter((_, j) => j !== i))}
             >
-              <CloseIcon />
+              <Icon name="close" />
             </button>
             {i === 0 ? (
               <span className="photo-cover">Cover</span>
@@ -87,7 +87,7 @@ export function PhotoPicker({ photos, onChange }: Props) {
         ))}
         {photos.length < MAX_PHOTOS && (
           <label className={`photo-add${busy ? ' busy' : ''}`}>
-            <CameraIcon />
+            <Icon name="add_a_photo" />
             <span>{busy ? 'Preparing…' : photos.length ? 'Add more' : 'Add photos'}</span>
             <input
               ref={input}

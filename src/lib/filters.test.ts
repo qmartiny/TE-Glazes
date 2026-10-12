@@ -12,19 +12,17 @@ import {
 const glaze = (name: string, application: string | null = null): Layer => ({ type: 'glaze', name, application });
 
 const rows: FacetRow[] = [
-  { userId: 'a', clay: 'Porcelain', firing: 'reduction', studio: 'Hoxton', layers: [glaze('Faux Celadon')] },
+  { userId: 'a', clay: 'Porcelain', firing: 'reduction', layers: [glaze('Faux Celadon')] },
   {
     userId: 'a',
     clay: 'Craft Crank',
     firing: 'reduction',
-    studio: 'Hoxton',
     layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')],
   },
   {
     userId: 'b',
     clay: 'Craft Crank',
     firing: 'oxidation',
-    studio: 'Leyton',
     layers: [
       { type: 'slip', name: 'Blue', application: 'Brushed' },
       { type: 'oxide', name: 'Cobalt Oxide', application: null },

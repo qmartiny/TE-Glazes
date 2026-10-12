@@ -1,7 +1,7 @@
 import type { Combo, ComboFilters, FacetRow, Firing, LayerType } from '../types';
 import { layerLabel } from './layers';
 
-export const FILTER_KEYS = ['glaze', 'slip', 'oxide', 'clay', 'firing', 'studio', 'user'] as const;
+export const FILTER_KEYS = ['glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
 export type FilterKey = (typeof FILTER_KEYS)[number];
 
 /** Filters that match a glaze, slip or oxide in any layer. */
@@ -42,7 +42,6 @@ export function matchesFilters(
 ): boolean {
   if (ignore !== 'clay' && filters.clay && row.clay !== filters.clay) return false;
   if (ignore !== 'firing' && filters.firing && row.firing !== filters.firing) return false;
-  if (ignore !== 'studio' && filters.studio && row.studio !== filters.studio) return false;
   if (ignore !== 'user' && filters.user && row.userId !== filters.user) return false;
   for (const type of LAYER_FILTER_KEYS) {
     const name = filters[type];
@@ -59,7 +58,6 @@ export interface Facets {
   oxide: Counts;
   clay: Counts;
   firing: Counts;
-  studio: Counts;
   user: Counts;
 }
 
@@ -79,7 +77,6 @@ export function computeFacets(rows: FacetRow[], filters: ComboFilters): Facets {
     oxide: new Map(),
     clay: new Map(),
     firing: new Map(),
-    studio: new Map(),
     user: new Map(),
   };
   for (const row of rows) {
@@ -91,7 +88,6 @@ export function computeFacets(rows: FacetRow[], filters: ComboFilters): Facets {
     }
     if (matchesFilters(row, filters, 'clay')) bump(facets.clay, row.clay);
     if (matchesFilters(row, filters, 'firing')) bump(facets.firing, row.firing);
-    if (matchesFilters(row, filters, 'studio')) bump(facets.studio, row.studio);
     if (matchesFilters(row, filters, 'user')) bump(facets.user, row.userId);
   }
   return facets;

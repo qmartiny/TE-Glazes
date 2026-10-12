@@ -1,6 +1,7 @@
 import { useState, type FormEvent } from 'react';
 import { Link, useNavigate } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
+import { TextField } from '../components/Fields';
 import { backend } from '../lib/api';
 import { errorMessage } from '../lib/useAsync';
 
@@ -15,11 +16,11 @@ export function ResetPasswordPage() {
   if (!user) {
     return (
       <div className="narrow empty">
-        <h1>Reset link expired</h1>
+        <h1 className="page-title">Reset link expired</h1>
         <p>
           This link has expired or was opened on a different device or browser from the one you requested it on.
         </p>
-        <Link to="/signin?mode=reset" className="btn">
+        <Link to="/signin?mode=reset" className="btn btn-tonal">
           Send a new link
         </Link>
       </div>
@@ -42,24 +43,23 @@ export function ResetPasswordPage() {
   return (
     <div className="narrow">
       <form className="form" onSubmit={onSubmit}>
-        <h1>Choose a new password</h1>
-        <label className="field">
-          <span>New password</span>
-          <input
-            type="password"
-            value={password}
-            required
-            minLength={6}
-            autoComplete="new-password"
-            onChange={(e) => setPassword(e.target.value)}
-          />
-        </label>
+        <h1 className="page-title">Choose a new password</h1>
+        <TextField
+          label="New password"
+          type="password"
+          value={password}
+          required
+          minLength={6}
+          autoComplete="new-password"
+          supportingText="At least 6 characters"
+          onChange={(e) => setPassword(e.target.value)}
+        />
         {error && (
           <p className="form-error" role="alert">
             {error}
           </p>
         )}
-        <button type="submit" className="btn btn-primary btn-block" disabled={busy}>
+        <button type="submit" className="btn btn-filled btn-block" disabled={busy}>
           {busy ? 'Saving…' : 'Save new password'}
         </button>
       </form>
