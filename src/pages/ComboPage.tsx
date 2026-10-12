@@ -1,4 +1,4 @@
-import { useMemo, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { AddComboButton } from '../components/AddComboButton';
 import { useAuth } from '../auth/AuthContext';
@@ -7,13 +7,16 @@ import { Dialog } from '../components/Dialog';
 import { Icon } from '../components/Icon';
 import { PhotoGallery } from '../components/PhotoGallery';
 import { showSnackbar } from '../components/Snackbar';
+import { CLAYS } from '../config';
 import { backend } from '../lib/api';
+import { clayLabel } from '../lib/clays';
 import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGroup } from '../lib/filters';
 import { formatDate } from '../lib/format';
 import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
+import { sortStudioTiles } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
-import type { Combo, ComboFilters, Layer } from '../types';
+import type { Combo, ComboFilters, Layer, ResultSummary } from '../types';
 import { NotFoundPage } from './NotFoundPage';
 
 const browseLink = (filters: ComboFilters) => `/?${paramsFromFilters(filters)}`;
@@ -59,14 +62,26 @@ export function ComboPage() {
   if (group === null) return <NotFoundPage what="combo" />;
 
   const title = groupTitle(group);
-  const people = new Set(group.results.map((r) => r.userId)).size;
-  // The result you followed a link to comes first, then studio test tiles, then newest first.
-  const combos = [...(full.data ?? [])].sort(
-    (a, b) =>
-      Number(b.id === id) - Number(a.id === id) ||
-      Number(b.official) - Number(a.official) ||
-      b.createdAt.localeCompare(a.createdAt),
+  // Studio test tiles (one per clay and kiln, so there can be many) get a compact strip;
+  // members' results are shown in full below it.
+  const studioTiles = sortStudioTiles(
+    group.results.filter((r) => r.official),
+    CLAYS,
   );
+  const memberResults = group.results.filter((r) => !r.official);
+  const people = new Set(memberResults.map((r) => r.userId)).size;
+  const openTile = full.data?.find((c) => c.id === id && c.official);
+  // The result you followed a link to comes first, then newest first.
+  const combos = (full.data ?? [])
+    .filter((c) => !c.official)
+    .sort((a, b) => Number(b.id === id) - Number(a.id === id) || b.createdAt.localeCompare(a.createdAt));
+  const byline = [
+    memberResults.length &&
+      `${memberResults.length} ${memberResults.length === 1 ? 'result' : 'results'} from ${people} ${people === 1 ? 'member' : 'members'}`,
+    studioTiles.length && `${studioTiles.length} studio test ${studioTiles.length === 1 ? 'tile' : 'tiles'}`,
+  ]
+    .filter(Boolean)
+    .join(' · ');
 
   async function onShare() {
     const url = `${window.location.origin}${window.location.pathname}#${comboLink(group!.key)}`;
@@ -113,10 +128,7 @@ export function ComboPage() {
       <div className="combo-overview">
         <header>
           <h1 className="page-title">{title}</h1>
-          <p className="byline">
-            {group.results.length} {group.results.length === 1 ? 'result' : 'results'} from {people}{' '}
-            {people === 1 ? 'member' : 'members'}
-          </p>
+          <p className="byline">{byline}</p>
         </header>
 
         <section aria-labelledby="layers-h">
@@ -150,17 +162,36 @@ export function ComboPage() {
         </div>
       </div>
 
-      <section className="results" aria-labelledby="results-h">
-        <h2 id="results-h" className="section-title">
-          {group.results.length === 1 ? 'Result' : 'Results'}
-        </h2>
+      <section className="results" aria-label="Results">
         {full.error && <p className="form-error">Couldn't load the results: {full.error}</p>}
+        {studioTiles.length > 0 && (
+          <div className="studio-tiles">
+            <h2 className="section-title">
+              Studio test tiles <span className="section-hint">on each clay, in each kiln</span>
+            </h2>
+            <TileStrip tiles={studioTiles} openId={openTile?.id} />
+            {openTile && (
+              <ResultBlock
+                combo={openTile}
+                highlighted={false}
+                isOwner={user?.id === openTile.userId}
+                onDelete={() => setDeleting(openTile)}
+              />
+            )}
+          </div>
+        )}
+        {memberResults.length > 0 && (
+          <h2 className="section-title">
+            {memberResults.length === 1 ? 'Result' : 'Results'}
+            {studioTiles.length > 0 && <span className="section-hint"> from members</span>}
+          </h2>
+        )}
         {full.loading && !full.data && <div className="spinner" aria-label="Loading" />}
         {combos.map((combo) => (
           <ResultBlock
             key={combo.id}
             combo={combo}
-            highlighted={combo.id === id && group.results.length > 1}
+            highlighted={combo.id === id && memberResults.length > 1}
             isOwner={user?.id === combo.userId}
             onDelete={() => setDeleting(combo)}
           />
@@ -193,6 +224,37 @@ export function ComboPage() {
         )}
       </Dialog>
     </article>
+  );
+}
+
+/** Studio tiles as small thumbnails, labelled with clay and kiln; tap one to open it below. */
+function TileStrip({ tiles, openId }: { tiles: ResultSummary[]; openId: string | undefined }) {
+  const open = useRef<HTMLAnchorElement>(null);
+  useEffect(() => {
+    open.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
+  }, [openId]);
+  return (
+    <div className="tile-strip" role="list">
+      {tiles.map((t) => (
+        <Link
+          key={t.id}
+          ref={t.id === openId ? open : undefined}
+          to={`/c/${t.id}`}
+          replace={openId !== undefined}
+          role="listitem"
+          className={`tile-mini${t.id === openId ? ' selected' : ''}`}
+          aria-current={t.id === openId ? 'true' : undefined}
+        >
+          {t.photos[0] ? (
+            <img src={backend.photoUrl(t.photos[0].thumb)} alt="" loading="lazy" decoding="async" />
+          ) : (
+            <span className="tile-mini-noimg" />
+          )}
+          <span className="tile-mini-clay">{clayLabel(t.clays)}</span>
+          <span className="tile-mini-kiln">{firingLabel(t.firing)}</span>
+        </Link>
+      ))}
+    </div>
   );
 }
 

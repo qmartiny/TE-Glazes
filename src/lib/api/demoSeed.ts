@@ -67,25 +67,55 @@ function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate' | 'official'> & Pa
 
 const one = (name: string) => [{ name, percent: null }];
 
-/** A studio test tile: one glaze on Craft Crank. */
-function studioTile(
-  id: string,
-  name: string,
-  firing: StoredCombo['firing'],
-  colors: [string, string],
-  createdAt: string,
-) {
-  return combo({
-    id,
-    userId: 'demo-studio',
-    clays: one('Craft Crank'),
-    firing,
-    layers: [glaze(name, 'Dipped')],
-    description: 'Studio test tile. Dipped for 3 seconds, bottom half double-dipped.',
-    photos: [tilePhoto({ clay: '#c9ab86', base: colors, top: colors, speckle: true })],
-    official: true,
-    createdAt,
-  });
+// Studio test tiles: every glaze on each clay, in each kiln, with a few still to do.
+const TILE_GLAZES: [string, [string, string]][] = [
+  ['Shiny White', ['#f6f4ef', '#d9dde0']],
+  ['Faux Celadon', ['#c3d9c4', '#8db39a']],
+  ['Midnight Blue', ['#4f63a3', '#1f2a5c']],
+  ['Honey', ['#e0a94c', '#9a5a1c']],
+  ['Tenmoku', ['#6a3018', '#24130d']],
+  ['Sea Green', ['#7fb2a0', '#3f6f62']],
+  ['Mustard', ['#dcb544', '#a07d1d']],
+  ['Matt Black', ['#3a3533', '#1e1b1a']],
+];
+const TILE_CLAYS: { clay: string; body: string; electric: number; gas: number }[] = [
+  { clay: 'Craft Crank', body: '#c9ab86', electric: 8, gas: 8 },
+  { clay: 'Porcelain', body: '#f4f1ec', electric: 8, gas: 5 },
+  { clay: 'Vulcan Medium Black', body: '#3d3330', electric: 4, gas: 0 },
+];
+
+/** Reduction tends to come out a little darker. */
+function darker(hex: string): string {
+  const n = parseInt(hex.slice(1), 16);
+  const c = (shift: number) => Math.round(((n >> shift) & 255) * 0.8);
+  return `#${((c(16) << 16) | (c(8) << 8) | c(0)).toString(16).padStart(6, '0')}`;
+}
+
+function studioTiles(): StoredCombo[] {
+  return TILE_CLAYS.flatMap(({ clay, body, electric, gas }, ci) =>
+    (['oxidation', 'reduction'] as const).flatMap((firing) =>
+      TILE_GLAZES.slice(0, firing === 'oxidation' ? electric : gas).map(([name, colors], gi) =>
+        combo({
+          id: `tile-${ci}-${firing}-${gi}`,
+          userId: 'demo-studio',
+          clays: one(clay),
+          firing,
+          layers: [glaze(name, 'Dipped')],
+          description: 'Studio test tile. Dipped for 3 seconds, bottom half double-dipped.',
+          photos: [
+            tilePhoto({
+              clay: body,
+              base: firing === 'reduction' ? [darker(colors[0]), darker(colors[1])] : colors,
+              top: firing === 'reduction' ? [darker(colors[0]), darker(colors[1])] : colors,
+              speckle: clay !== 'Porcelain',
+            }),
+          ],
+          official: true,
+          createdAt: `2026-06-0${ci + 1}T10:${String(gi * 2 + (firing === 'reduction' ? 1 : 0)).padStart(2, '0')}:00Z`,
+        }),
+      ),
+    ),
+  );
 }
 
 const glaze = (name: string, application: string | null = null) => ({ type: 'glaze' as const, name, application });
@@ -172,11 +202,6 @@ export function demoCombos(): StoredCombo[] {
       photos: [tilePhoto({ clay: '#bfa281', base: ['#6f8f55', '#2f4a2c'], speckle: true })],
       createdAt: '2026-07-30T16:45:00Z',
     }),
-    studioTile('tile-1', 'Tenmoku', 'reduction', ['#6a3018', '#24130d'], '2026-06-01T10:00:00Z'),
-    studioTile('tile-2', 'Tenmoku', 'oxidation', ['#8a4a2a', '#3a2016'], '2026-06-01T10:05:00Z'),
-    studioTile('tile-3', 'Midnight Blue', 'reduction', ['#4f63a3', '#1f2a5c'], '2026-06-01T10:10:00Z'),
-    studioTile('tile-4', 'Shiny White', 'oxidation', ['#f6f4ef', '#d9dde0'], '2026-06-01T10:15:00Z'),
-    studioTile('tile-5', 'Faux Celadon', 'reduction', ['#c3d9c4', '#8db39a'], '2026-06-01T10:20:00Z'),
-    studioTile('tile-6', 'Honey', 'oxidation', ['#e0a94c', '#9a5a1c'], '2026-06-01T10:25:00Z'),
+    ...studioTiles(),
   ];
 }
