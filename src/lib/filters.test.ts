@@ -2,10 +2,10 @@ import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
 import {
   buildOptions,
-  comboTitle,
   computeFacets,
   filterGroups,
   filtersFromParams,
+  firingsLabel,
   groupResults,
   groupTitle,
   paramsFromFilters,
@@ -18,7 +18,7 @@ const oxide = (name: string): Layer => ({ type: 'oxide', name, application: null
 
 let n = 0;
 function result(userId: string, clay: string, firing: Firing, layers: Layer[], createdAt: string): ResultSummary {
-  return { id: `r${n++}`, userId, title: null, clay, firing, layers, photos: [], isPrivate: false, createdAt };
+  return { id: `r${n++}`, userId, clay, firing, layers, description: null, photos: [], isPrivate: false, createdAt };
 }
 
 const results: ResultSummary[] = [
@@ -115,10 +115,15 @@ describe('buildOptions', () => {
 });
 
 describe('labels', () => {
-  it("uses a post's nickname, otherwise its layers", () => {
-    expect(comboTitle({ title: '  ', layers: [glaze('Tenmoku'), glaze('Midnight Blue')] })).toBe('Tenmoku + Midnight Blue');
-    expect(comboTitle({ title: null, layers: [slip('Blue'), oxide('Cobalt Oxide')] })).toBe('Blue slip + Cobalt Oxide');
-    expect(comboTitle({ title: 'Blue rim', layers: [glaze('Tenmoku')] })).toBe('Blue rim');
+  it('names a combo after its layers', () => {
+    expect(groupTitle({ layers: [glaze('Tenmoku'), glaze('Midnight Blue')] })).toBe('Tenmoku + Midnight Blue');
+    expect(groupTitle({ layers: [slip('Blue'), oxide('Cobalt Oxide')] })).toBe('Blue slip + Cobalt Oxide');
+  });
+
+  it('calls firings by the kiln', () => {
+    expect(firingsLabel(['oxidation'])).toBe('Electric kiln');
+    expect(firingsLabel(['reduction', 'reduction'])).toBe('Gas kiln');
+    expect(firingsLabel(['oxidation', 'reduction'])).toBe('Electric & gas kiln');
   });
 
   it('summarizes lists', () => {

@@ -3,7 +3,6 @@ import type { ComboInput } from '../../types';
 import { createLocalBackend } from './local';
 
 const input: ComboInput = {
-  title: null,
   clay: 'Porcelain',
   firing: 'reduction',
   layers: [
@@ -46,8 +45,8 @@ describe('demo backend', () => {
     expect(mine.map((r) => r.id)).toEqual([created.id]);
     expect(mine[0].layers.map((l) => l.name)).toEqual(['White', 'Faux Celadon']);
 
-    const updated = await backend.updateCombo(created.id, { ...input, title: 'Pooling celadon' });
-    expect(updated.title).toBe('Pooling celadon');
+    const updated = await backend.updateCombo(created.id, { ...input, clay: 'Special White' });
+    expect(updated.clay).toBe('Special White');
 
     await backend.deleteCombo(updated);
     expect(await backend.getCombo(created.id)).toBeNull();

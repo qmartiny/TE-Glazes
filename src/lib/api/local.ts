@@ -215,10 +215,10 @@ export function createLocalBackend(): Backend {
             (c): ResultSummary => ({
               id: c.id,
               userId: c.userId,
-              title: c.title,
               clay: c.clay,
               firing: c.firing,
               layers: c.layers,
+              description: c.description,
               photos: c.photos,
               isPrivate: c.isPrivate,
               createdAt: c.createdAt,

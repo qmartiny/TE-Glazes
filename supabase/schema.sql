@@ -70,7 +70,7 @@ create trigger on_auth_user_created
 create table if not exists public.combinations (
   id uuid primary key default gen_random_uuid(),
   user_id uuid not null default auth.uid() references public.profiles (id) on delete cascade,
-  title text check (char_length(title) <= 120),
+  title text check (char_length(title) <= 120), -- no longer used: combos are named after their layers
   clay text not null check (char_length(clay) between 1 and 80),
   firing text not null check (firing in ('oxidation', 'reduction')),
   studio text check (char_length(studio) <= 60), -- no longer used: studio lives on the profile

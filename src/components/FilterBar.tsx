@@ -1,5 +1,14 @@
+import { useEffect, useRef } from 'react';
 import { CLAYS, FIRINGS, GLAZES, OXIDES, SLIPS } from '../config';
-import { buildOptions, hasFilters, type Facets, type FilterKey, type Option } from '../lib/filters';
+import {
+  buildOptions,
+  hasFilters,
+  paramsFromFilters,
+  type FacetKey,
+  type Facets,
+  type FilterKey,
+  type Option,
+} from '../lib/filters';
 import type { ComboFilters, Profile } from '../types';
 import { Icon } from './Icon';
 
@@ -38,8 +47,14 @@ interface Props {
 }
 
 export function FilterBar({ filters, facets, profiles, onChange }: Props) {
+  // When filters change, scroll the chips back to the start so the active ones are in view.
+  const row = useRef<HTMLDivElement>(null);
+  const key = paramsFromFilters(filters).toString();
+  useEffect(() => {
+    row.current?.scrollTo({ left: 0 });
+  }, [key]);
   const empty = new Map<string, number>();
-  const counts = (key: FilterKey) => facets?.[key] ?? empty;
+  const counts = (key: FacetKey) => facets?.[key] ?? empty;
   const set = (key: FilterKey) => (value: string | undefined) => onChange({ ...filters, [key]: value });
 
   const firingOptions = FIRINGS.map((f) => ({ value: f.value, label: f.label, count: counts('firing').get(f.value) ?? 0 }));
@@ -49,7 +64,19 @@ export function FilterBar({ filters, facets, profiles, onChange }: Props) {
   const selectedUser = profiles.find((p) => p.id === filters.user);
 
   return (
-    <div className="chip-row" role="group" aria-label="Filters">
+    <div className="chip-row" role="group" aria-label="Filters" ref={row}>
+      {filters.q && (
+        <button
+          type="button"
+          className="chip chip-filter selected"
+          aria-label={`Remove search for “${filters.q}”`}
+          onClick={() => onChange({ ...filters, q: undefined })}
+        >
+          <Icon name="search" className="chip-leading" />
+          <span className="chip-text">“{filters.q}”</span>
+          <Icon name="close" className="chip-trailing" />
+        </button>
+      )}
       <FilterChip
         label="Glaze"
         value={filters.glaze}
@@ -63,7 +90,7 @@ export function FilterBar({ filters, facets, profiles, onChange }: Props) {
         onChange={set('clay')}
       />
       <FilterChip
-        label="Firing"
+        label="Kiln"
         value={filters.firing}
         valueLabel={FIRINGS.find((f) => f.value === filters.firing)?.label}
         options={firingOptions}

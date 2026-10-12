@@ -1,8 +1,11 @@
-import type { Combo, ComboFilters, Firing, Layer, LayerType, ResultSummary } from '../types';
+import type { ComboFilters, Firing, Layer, LayerType, ResultSummary } from '../types';
+import { FIRINGS } from '../config';
 import { comboKey, layerLabel, normName } from './layers';
 
-export const FILTER_KEYS = ['glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
+export const FILTER_KEYS = ['q', 'glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
 export type FilterKey = (typeof FILTER_KEYS)[number];
+/** Filters with a dropdown (everything except free-text search). */
+export type FacetKey = Exclude<FilterKey, 'q'>;
 
 /** Filters that match a glaze, slip or oxide in any layer. */
 export const LAYER_FILTER_KEYS = ['glaze', 'slip', 'oxide'] as const satisfies readonly LayerType[];
@@ -73,7 +76,16 @@ function layersMatch(layers: Layer[], filters: ComboFilters, ignore?: FilterKey)
   });
 }
 
-function resultMatches(result: ResultSummary, filters: ComboFilters, ignore?: FilterKey): boolean {
+/** Every word of the search appears in the notes, clay or layer names. */
+export function textMatches(result: ResultSummary, layers: Layer[], query: string): boolean {
+  const haystack = normName([result.description ?? '', result.clay, ...layers.map(layerLabel)].join(' '));
+  return normName(query)
+    .split(' ')
+    .every((word) => haystack.includes(word));
+}
+
+function resultMatches(result: ResultSummary, layers: Layer[], filters: ComboFilters, ignore?: FilterKey): boolean {
+  if (ignore !== 'q' && filters.q && !textMatches(result, layers, filters.q)) return false;
   if (ignore !== 'clay' && filters.clay && normName(result.clay) !== normName(filters.clay)) return false;
   if (ignore !== 'firing' && filters.firing && result.firing !== filters.firing) return false;
   if (ignore !== 'user' && filters.user && result.userId !== filters.user) return false;
@@ -86,7 +98,7 @@ function resultMatches(result: ResultSummary, filters: ComboFilters, ignore?: Fi
  */
 export function matchingResults(group: ComboGroup, filters: ComboFilters, ignore?: FilterKey): ResultSummary[] {
   if (!layersMatch(group.layers, filters, ignore)) return [];
-  return group.results.filter((r) => resultMatches(r, filters, ignore));
+  return group.results.filter((r) => resultMatches(r, group.layers, filters, ignore));
 }
 
 export interface FilteredGroup {
@@ -103,7 +115,7 @@ export function filterGroups(groups: ComboGroup[], filters: ComboFilters): Filte
 }
 
 export type Counts = Map<string, number>;
-export type Facets = Record<FilterKey, Counts>;
+export type Facets = Record<FacetKey, Counts>;
 
 function bump(counts: Counts, key: string) {
   counts.set(key, (counts.get(key) ?? 0) + 1);
@@ -164,13 +176,7 @@ export function buildOptions(defaults: readonly string[], counts: Counts, select
 }
 
 export function firingLabel(firing: Firing): string {
-  return firing === 'oxidation' ? 'Oxidation' : 'Reduction';
-}
-
-/** A post's own name if it has one, otherwise its layers. */
-export function comboTitle(combo: Pick<Combo, 'title' | 'layers'>): string {
-  if (combo.title?.trim()) return combo.title.trim();
-  return combo.layers.map(layerLabel).join(' + ') || 'Untitled combo';
+  return FIRINGS.find((f) => f.value === firing)?.label ?? firing;
 }
 
 /** "Craft Crank", "Craft Crank, Porcelain", "Craft Crank, Porcelain +2" */
@@ -182,5 +188,5 @@ export function summarize(values: string[], max = 2): string {
 
 export function firingsLabel(firings: Firing[]): string {
   const unique = [...new Set(firings)];
-  return unique.length > 1 ? 'Oxidation & reduction' : firingLabel(unique[0] ?? 'oxidation');
+  return unique.length > 1 ? 'Electric & gas kiln' : firingLabel(unique[0] ?? 'oxidation');
 }

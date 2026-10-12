@@ -54,8 +54,8 @@ export const DEMO_PROFILES: Profile[] = [
 
 type StoredCombo = Omit<Combo, 'author'>;
 
-function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate' | 'title'> & Partial<StoredCombo>): StoredCombo {
-  return { title: null, isPrivate: false, updatedAt: c.createdAt, ...c };
+function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate'> & Partial<StoredCombo>): StoredCombo {
+  return { isPrivate: false, updatedAt: c.createdAt, ...c };
 }
 
 const glaze = (name: string, application: string | null = null) => ({ type: 'glaze' as const, name, application });
@@ -67,7 +67,6 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-1',
       userId: 'demo-maya',
-      title: 'Blue rim tenmoku',
       clay: 'Craft Crank',
       firing: 'reduction',
       layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')],
@@ -102,7 +101,6 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-3',
       userId: 'demo-sam',
-      title: 'Cobalt brushwork',
       clay: 'Special White',
       firing: 'reduction',
       layers: [slip('Blue', 'Brushed'), oxide('Cobalt Oxide', 'Sponged'), glaze('Transparent', 'Dipped')],
@@ -114,7 +112,6 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-4',
       userId: 'demo-jo',
-      title: 'Snowy black',
       clay: 'Vulcan Medium Black',
       firing: 'reduction',
       layers: [glaze('Matt Black', 'Dipped'), glaze('Shiny White', 'Brushed')],
