@@ -4,7 +4,8 @@ A small, mobile-friendly website where members of a pottery studio share the gla
 
 - **Share a result**: add photos of pieces or test tiles, the clay, the glazes, slips and oxides in the order applied (with how each was applied), oxidation or reduction, and notes like "Glaze 1 dipped, glaze 2 poured on top, runny!"
 - **One page per combo**: results with the same layers in the same order (e.g. Tenmoku, then Midnight Blue) are grouped, like recipes with many people's photos on Glazy. Each member's photos, clay, firing and notes stay as their own result, so you can compare the same combo on different clays and firings. The reverse order is a separate combo. "Add your result" on a combo page starts a post with the same layers, and the form says when your layers match a combo that already has results.
-- **Browse and filter** by glaze, slip or oxide, clay, firing or potter. A combo shows up when at least one result matches (clay and firing must match the same result). Filters live in the URL, so a filtered view can be shared as a link.
+- **Search** from one box: as you type, it suggests glazes, slips, oxides, clays, firings and members (with how many combos each has), and picking one sets that filter. Pressing enter searches the notes instead, e.g. "runny" or "crawled".
+- **Browse and filter** by glaze, slip or oxide, clay, firing or potter. A combo shows up when at least one result matches (clay and firing must match the same result). Combos are named after their layers. Filters and searches live in the URL, so a filtered view can be shared as a link.
 - **Profiles**: name and studio, plus a page listing each person's results. Mark a result **private** to keep it as a personal note only you can see.
 - Anyone with the link can browse. You need an account to post.
 
@@ -59,7 +60,7 @@ These lists fill the dropdowns and filters. People can always pick **Other…** 
 ## Good to know
 
 - **Free tier**: Supabase's free plan includes 1 GB of file storage (thousands of resized photos) and 500 MB of database. Free projects are paused after a week with no activity; you can resume one from the Supabase dashboard.
-- **Grouping happens in the browser.** The site loads a short summary of every post (no notes) to group and filter them, which is quick for a studio's worth of posts, even thousands. Typed-in "Other…" names group when they match ignoring capitals and spaces.
+- **Grouping happens in the browser.** The site loads a short summary of every post (including notes, for search) to group, filter and search them, which is quick for a studio's worth of posts, even thousands. Typed-in "Other…" names group when they match ignoring capitals and spaces.
 - **Private results** are hidden from everyone else in the app. Their photo files sit in a public bucket under long random names, so they can't be found by browsing, but anyone given the exact image link could open it.
 - **Members only?** To require sign-in just to browse, change the two `select` policies in `schema.sql` (on `profiles` and `combinations`) to `to authenticated`, then re-run it.
 - **Password reset links** must be opened on the same device and browser that requested them.

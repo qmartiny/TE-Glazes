@@ -208,7 +208,7 @@ function ResultBlock({
     <article className={`result${highlighted ? ' highlight' : ''}`} aria-label={`Result by ${combo.author?.displayName}`}>
       <div className="result-media">
         {combo.photos.length ? (
-          <PhotoGallery photos={combo.photos} alt={combo.title ?? groupTitle(combo)} />
+          <PhotoGallery photos={combo.photos} alt={groupTitle(combo)} />
         ) : (
           <div className="card-noimg combo-noimg">No photo</div>
         )}
@@ -219,7 +219,6 @@ function ResultBlock({
           {' · '}
           {formatDate(combo.createdAt)}
         </p>
-        {combo.title && <h3 className="result-title">{combo.title}</h3>}
         {combo.isPrivate && (
           <p className="private-note">
             <Icon name="lock" /> Private: only you can see this

@@ -21,9 +21,12 @@ export const ICONS = [
   'logout',
   'palette',
   'photo_library',
+  'science',
+  'search',
   'search_off',
   'share',
   'texture',
+  'water_drop',
 ] as const;
 
 export type IconName = (typeof ICONS)[number];

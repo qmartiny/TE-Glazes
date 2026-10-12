@@ -38,7 +38,6 @@ export interface Combo {
   id: string;
   userId: string;
   author: Pick<Profile, 'id' | 'displayName' | 'studio'> | null;
-  title: string | null;
   clay: string;
   firing: Firing;
   layers: Layer[];
@@ -50,7 +49,6 @@ export interface Combo {
 }
 
 export interface ComboInput {
-  title: string | null;
   clay: string;
   firing: Firing;
   layers: Layer[];
@@ -60,6 +58,8 @@ export interface ComboInput {
 }
 
 export interface ComboFilters {
+  /** Free text, matched against notes, clay and layer names. */
+  q?: string;
   clay?: string;
   glaze?: string;
   slip?: string;
@@ -74,7 +74,7 @@ export interface ComboFilters {
  */
 export type ResultSummary = Pick<
   Combo,
-  'id' | 'userId' | 'title' | 'clay' | 'firing' | 'layers' | 'photos' | 'isPrivate' | 'createdAt'
+  'id' | 'userId' | 'clay' | 'firing' | 'layers' | 'description' | 'photos' | 'isPrivate' | 'createdAt'
 >;
 
 export interface AuthUser {

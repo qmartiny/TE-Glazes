@@ -3,6 +3,7 @@ import { Link, useSearchParams } from 'react-router';
 import { CardGrid, GridSkeleton, GroupCard, LoadError } from '../components/Cards';
 import { FilterBar } from '../components/FilterBar';
 import { Icon } from '../components/Icon';
+import { SearchBox } from '../components/SearchBox';
 import { APP_TAGLINE } from '../config';
 import { backend } from '../lib/api';
 import { computeFacets, filterGroups, filtersFromParams, groupResults, hasFilters, paramsFromFilters } from '../lib/filters';
@@ -33,7 +34,7 @@ export function BrowsePage() {
     body = hasFilters(filters) ? (
       <div className="empty">
         <Icon name="search_off" className="empty-icon" />
-        <p>No combos match these filters.</p>
+        <p>No combos match {filters.q ? 'this search' : 'these filters'}.</p>
         <button className="btn btn-tonal" onClick={() => setFilters({})}>
           Clear filters
         </button>
@@ -64,6 +65,12 @@ export function BrowsePage() {
         <p className="section-supporting">{APP_TAGLINE}.</p>
       </section>
 
+      <SearchBox
+        facets={facets}
+        names={names}
+        filters={filters}
+        onPick={(key, value) => setFilters({ ...filters, [key]: value })}
+      />
       <FilterBar filters={filters} facets={facets} profiles={profiles.data ?? []} onChange={setFilters} />
       {shown && (
         <p className="result-count">

@@ -4,7 +4,7 @@ import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
 import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEditor';
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
-import { TextArea, TextField } from '../components/Fields';
+import { TextArea } from '../components/Fields';
 import { Icon } from '../components/Icon';
 import { CLAYS, FIRINGS } from '../config';
 import { backend } from '../lib/api';
@@ -59,7 +59,6 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
         ? template.layers.map((l) => newLayer(l.type, l.name))
         : [newLayer()],
   );
-  const [title, setTitle] = useState(initial?.title ?? '');
   const [clay, setClay] = useState(initial?.clay ?? last?.clay ?? '');
   const [firing, setFiring] = useState<Firing>(initial?.firing ?? FIRINGS[0].value);
   const [description, setDescription] = useState(initial?.description ?? '');
@@ -102,7 +101,6 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
 
       setStatus('Saving…');
       const input: ComboInput = {
-        title: title.trim() || null,
         clay: clay.trim(),
         firing,
         layers: cleanLayers,
@@ -189,13 +187,6 @@ function ComboForm({ initial, template }: { initial: Combo | null; template: Com
 
         <section className="form-section">
           <h2 className="section-title">Notes</h2>
-          <TextField
-            label="Nickname (optional)"
-            value={title}
-            maxLength={120}
-            onChange={(e) => setTitle(e.target.value)}
-            supportingText="Shown on your result, e.g. Blue rim tenmoku. The combo itself is named after its layers."
-          />
           <TextArea
             label="How you did it"
             rows={5}

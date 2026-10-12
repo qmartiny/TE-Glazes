@@ -2,8 +2,7 @@ import { Fragment, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PAGE_SIZE } from '../config';
 import { backend } from '../lib/api';
-import { comboTitle, firingLabel, firingsLabel, groupTitle, summarize, type ComboGroup } from '../lib/filters';
-import { layerLabel } from '../lib/layers';
+import { firingLabel, firingsLabel, groupTitle, summarize, type ComboGroup } from '../lib/filters';
 import type { Photo, ResultSummary } from '../types';
 import { Icon } from './Icon';
 
@@ -70,8 +69,7 @@ export function ResultCard({ result }: { result: ResultSummary }) {
     <Link to={`/c/${result.id}`} className="card combo-card">
       <CardMedia photo={result.photos[0]} badges={result.isPrivate && <PrivateBadge />} />
       <div className="card-content">
-        <h3 className="card-title">{comboTitle(result)}</h3>
-        {result.title && <p className="card-text">{result.layers.map(layerLabel).join(' + ')}</p>}
+        <h3 className="card-title">{groupTitle(result)}</h3>
         <p className="card-text">
           {result.clay} · {firingLabel(result.firing)}
         </p>

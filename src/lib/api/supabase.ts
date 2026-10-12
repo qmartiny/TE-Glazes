@@ -13,7 +13,7 @@ import type { Backend } from './backend';
 
 const BUCKET = 'photos';
 const COMBO_SELECT = '*, author:profiles(id, display_name, studio)';
-const RESULT_SELECT = 'id, user_id, title, clay, firing, layers, photos, is_private, created_at';
+const RESULT_SELECT = 'id, user_id, clay, firing, layers, description, photos, is_private, created_at';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ProfileRow {
@@ -27,7 +27,6 @@ interface ProfileRow {
 interface ComboRow {
   id: string;
   user_id: string;
-  title: string | null;
   clay: string;
   firing: Firing;
   layers: unknown; // see normalizeLayers()
@@ -41,7 +40,7 @@ interface ComboRow {
 
 type ResultRow = Pick<
   ComboRow,
-  'id' | 'user_id' | 'title' | 'clay' | 'firing' | 'layers' | 'photos' | 'is_private' | 'created_at'
+  'id' | 'user_id' | 'clay' | 'firing' | 'layers' | 'description' | 'photos' | 'is_private' | 'created_at'
 >;
 
 function toProfile(row: ProfileRow): Profile {
@@ -61,7 +60,6 @@ function toCombo(row: ComboRow): Combo {
     author: row.author
       ? { id: row.author.id, displayName: row.author.display_name, studio: row.author.studio }
       : null,
-    title: row.title,
     clay: row.clay,
     firing: row.firing,
     layers: normalizeLayers(row.layers),
@@ -75,7 +73,6 @@ function toCombo(row: ComboRow): Combo {
 
 function fromInput(input: ComboInput) {
   return {
-    title: input.title,
     clay: input.clay,
     firing: input.firing,
     layers: input.layers,
@@ -197,10 +194,10 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
         (r): ResultSummary => ({
           id: r.id,
           userId: r.user_id,
-          title: r.title,
           clay: r.clay,
           firing: r.firing,
           layers: normalizeLayers(r.layers),
+          description: r.description,
           photos: r.photos ?? [],
           isPrivate: r.is_private,
           createdAt: r.created_at,
