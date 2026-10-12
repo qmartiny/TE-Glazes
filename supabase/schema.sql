@@ -1,5 +1,5 @@
 -- ===========================================================================
--- TE Glazes — database schema
+-- Glaze Book — database schema
 --
 -- Paste this whole file into Supabase → SQL Editor → New query → Run.
 -- It is safe to run again (e.g. after pulling an update).
