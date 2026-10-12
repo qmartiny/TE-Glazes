@@ -1,4 +1,5 @@
 import type { AuthUser, Combo, Profile, ResultSummary } from '../../types';
+import { normalizeClays } from '../clays';
 import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 import { DEMO_PROFILES, demoCombos } from './demoSeed';
@@ -90,8 +91,13 @@ export function createLocalBackend(): Backend {
     (state ??= (async () => {
       const saved = await store?.load();
       if (!saved) return seedState();
-      // Demo data saved by an older version stored glaze-only layers.
-      for (const c of saved.combos) c.layers = normalizeLayers(c.layers);
+      // Demo data saved by an older version stored glaze-only layers and one clay.
+      for (const c of saved.combos) {
+        const old = c as StoredCombo & { clay?: string };
+        c.layers = normalizeLayers(c.layers);
+        c.clays = normalizeClays(c.clays, old.clay);
+        c.official ??= false;
+      }
       return saved;
     })());
 
@@ -206,6 +212,10 @@ export function createLocalBackend(): Backend {
       });
     },
 
+    async isStudioAdmin() {
+      return true; // so the studio test tile tools can be tried in demo mode
+    },
+
     async listResults() {
       const s = await getState();
       return structuredClone(
@@ -215,12 +225,13 @@ export function createLocalBackend(): Backend {
             (c): ResultSummary => ({
               id: c.id,
               userId: c.userId,
-              clay: c.clay,
+              clays: c.clays,
               firing: c.firing,
               layers: c.layers,
               description: c.description,
               photos: c.photos,
               isPrivate: c.isPrivate,
+              official: c.official,
               createdAt: c.createdAt,
             }),
           ),

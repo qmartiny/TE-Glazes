@@ -14,6 +14,7 @@ export const ICONS = [
   'delete',
   'edit',
   'error',
+  'grid_on',
   'grid_view',
   'local_fire_department',
   'lock',
@@ -27,6 +28,7 @@ export const ICONS = [
   'settings',
   'share',
   'texture',
+  'verified',
   'water_drop',
 ] as const;
 

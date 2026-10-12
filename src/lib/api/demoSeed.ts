@@ -50,12 +50,42 @@ export const DEMO_PROFILES: Profile[] = [
   { id: 'demo-maya', displayName: 'Maya', studio: 'Hoxton', bio: 'Mostly mugs and big bowls.', createdAt: '2026-03-02T10:00:00Z' },
   { id: 'demo-sam', displayName: 'Sam', studio: 'Leyton', bio: 'Porcelain and carving.', createdAt: '2026-04-11T10:00:00Z' },
   { id: 'demo-jo', displayName: 'Jo', studio: 'Hoxton', bio: null, createdAt: '2026-05-20T10:00:00Z' },
+  {
+    id: 'demo-studio',
+    displayName: 'Studio team',
+    studio: null,
+    bio: 'Test tiles for the studio glazes.',
+    createdAt: '2026-01-10T10:00:00Z',
+  },
 ];
 
 type StoredCombo = Omit<Combo, 'author'>;
 
-function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate'> & Partial<StoredCombo>): StoredCombo {
-  return { isPrivate: false, updatedAt: c.createdAt, ...c };
+function combo(c: Omit<StoredCombo, 'updatedAt' | 'isPrivate' | 'official'> & Partial<StoredCombo>): StoredCombo {
+  return { isPrivate: false, official: false, updatedAt: c.createdAt, ...c };
+}
+
+const one = (name: string) => [{ name, percent: null }];
+
+/** A studio test tile: one glaze on Craft Crank. */
+function studioTile(
+  id: string,
+  name: string,
+  firing: StoredCombo['firing'],
+  colors: [string, string],
+  createdAt: string,
+) {
+  return combo({
+    id,
+    userId: 'demo-studio',
+    clays: one('Craft Crank'),
+    firing,
+    layers: [glaze(name, 'Dipped')],
+    description: 'Studio test tile. Dipped for 3 seconds, bottom half double-dipped.',
+    photos: [tilePhoto({ clay: '#c9ab86', base: colors, top: colors, speckle: true })],
+    official: true,
+    createdAt,
+  });
 }
 
 const glaze = (name: string, application: string | null = null) => ({ type: 'glaze' as const, name, application });
@@ -67,7 +97,7 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-1',
       userId: 'demo-maya',
-      clay: 'Craft Crank',
+      clays: one('Craft Crank'),
       firing: 'reduction',
       layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Poured')],
       description:
@@ -81,7 +111,7 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-7',
       userId: 'demo-sam',
-      clay: 'Porcelain',
+      clays: one('Porcelain'),
       firing: 'oxidation',
       layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Dipped')],
       description: 'Same pair on porcelain in the electric kiln. Much less run than in reduction, and the blue goes softer.',
@@ -91,7 +121,7 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-2',
       userId: 'demo-sam',
-      clay: 'Porcelain',
+      clays: one('Porcelain'),
       firing: 'reduction',
       layers: [glaze('Faux Celadon', 'Dipped')],
       description: 'Two quick dips. Pools beautifully in carved lines, great on fluted pieces.',
@@ -101,7 +131,7 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-3',
       userId: 'demo-sam',
-      clay: 'Special White',
+      clays: one('Special White'),
       firing: 'reduction',
       layers: [slip('Blue', 'Brushed'), oxide('Cobalt Oxide', 'Sponged'), glaze('Transparent', 'Dipped')],
       description:
@@ -112,7 +142,7 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-4',
       userId: 'demo-jo',
-      clay: 'Vulcan Medium Black',
+      clays: one('Vulcan Medium Black'),
       firing: 'reduction',
       layers: [glaze('Matt Black', 'Dipped'), glaze('Shiny White', 'Brushed')],
       description: 'Shiny White brushed thickly on the rim only (2 coats). Breaks blue-white over the black.',
@@ -122,7 +152,10 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-5',
       userId: 'demo-maya',
-      clay: 'Flecked Stoneware',
+      clays: [
+        { name: 'Flecked Stoneware', percent: 50 },
+        { name: 'Reclaim', percent: 50 },
+      ],
       firing: 'oxidation',
       layers: [glaze('Honey', 'Dipped'), glaze('Mustard', 'Dipped')],
       description: 'Double dip: Honey first, Mustard over the top half. The flecks come through nicely.',
@@ -132,12 +165,18 @@ export function demoCombos(): StoredCombo[] {
     combo({
       id: 'demo-6',
       userId: 'demo-jo',
-      clay: 'Draycott',
+      clays: one('Draycott'),
       firing: 'reduction',
       layers: [oxide('Red Iron Oxide', 'Wiped back'), glaze('Oribe', 'Poured')],
       description: 'Red iron oxide wiped back on textured bisque, then a single pour of Oribe. Goes dark where the oxide stays.',
       photos: [tilePhoto({ clay: '#bfa281', base: ['#6f8f55', '#2f4a2c'], speckle: true })],
       createdAt: '2026-07-30T16:45:00Z',
     }),
+    studioTile('tile-1', 'Tenmoku', 'reduction', ['#6a3018', '#24130d'], '2026-06-01T10:00:00Z'),
+    studioTile('tile-2', 'Tenmoku', 'oxidation', ['#8a4a2a', '#3a2016'], '2026-06-01T10:05:00Z'),
+    studioTile('tile-3', 'Midnight Blue', 'reduction', ['#4f63a3', '#1f2a5c'], '2026-06-01T10:10:00Z'),
+    studioTile('tile-4', 'Shiny White', 'oxidation', ['#f6f4ef', '#d9dde0'], '2026-06-01T10:15:00Z'),
+    studioTile('tile-5', 'Faux Celadon', 'reduction', ['#c3d9c4', '#8db39a'], '2026-06-01T10:20:00Z'),
+    studioTile('tile-6', 'Honey', 'oxidation', ['#e0a94c', '#9a5a1c'], '2026-06-01T10:25:00Z'),
   ];
 }

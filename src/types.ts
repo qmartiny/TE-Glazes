@@ -34,32 +34,44 @@ export interface Photo {
   height: number;
 }
 
+/** One clay in what a piece was made of: a single clay, or part of a mix (e.g. 50% Craft Crank). */
+export interface ClayPart {
+  name: string;
+  /** Share of the mix, 1–100. Null for a single clay, or when the mix wasn't measured. */
+  percent: number | null;
+}
+
 export interface Combo {
   id: string;
   userId: string;
   author: Pick<Profile, 'id' | 'displayName' | 'studio'> | null;
-  clay: string;
+  /** Usually one clay; several for a mix. */
+  clays: ClayPart[];
   firing: Firing;
   layers: Layer[];
   description: string | null;
   photos: Photo[];
   isPrivate: boolean;
+  /** A studio test tile, posted by the studio team (shown on the Test tiles page, not in Browse). */
+  official: boolean;
   createdAt: string;
   updatedAt: string;
 }
 
 export interface ComboInput {
-  clay: string;
+  clays: ClayPart[];
   firing: Firing;
   layers: Layer[];
   description: string | null;
   photos: Photo[];
   isPrivate: boolean;
+  official: boolean;
 }
 
 export interface ComboFilters {
   /** Free text, matched against notes, clay and layer names. */
   q?: string;
+  /** Matches a clay on its own or as part of a mix. */
   clay?: string;
   glaze?: string;
   slip?: string;
@@ -74,7 +86,7 @@ export interface ComboFilters {
  */
 export type ResultSummary = Pick<
   Combo,
-  'id' | 'userId' | 'clay' | 'firing' | 'layers' | 'description' | 'photos' | 'isPrivate' | 'createdAt'
+  'id' | 'userId' | 'clays' | 'firing' | 'layers' | 'description' | 'photos' | 'isPrivate' | 'official' | 'createdAt'
 >;
 
 export interface AuthUser {

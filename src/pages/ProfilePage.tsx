@@ -73,14 +73,17 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
     return isMe ? (
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
-        <p>You haven’t added any combos yet. Everything you add, shared or private, shows up here.</p>
+        <p>
+          This is your glaze log. Everything you add, shared or private, shows up here, so you can look back at what
+          you’ve tried.
+        </p>
         <AddComboButton className="btn btn-filled">
-          <Icon name="add" /> Add your first combo
+          <Icon name="add" /> Add your first glaze
         </AddComboButton>
       </div>
     ) : (
       <div className="empty">
-        <p>{name} hasn’t shared any combos yet.</p>
+        <p>{name} hasn’t shared any glazes yet.</p>
       </div>
     );
   }
@@ -90,7 +93,7 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
     <section aria-labelledby="profile-combos">
       <div className="section-head">
         <h2 id="profile-combos" className="section-title">
-          {isMe ? 'My combos' : 'Combos'}
+          {isMe ? 'My glazes' : 'Glazes'}
         </h2>
         <p className="section-supporting">
           {mine.length} {mine.length === 1 ? 'result' : 'results'}

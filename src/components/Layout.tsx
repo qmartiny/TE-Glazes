@@ -50,6 +50,7 @@ export function Layout() {
   const destinations: Destination[] = user
     ? [
         { to: '/', label: 'Browse', icon: 'grid_view', end: true },
+        { to: '/tiles', label: 'Test tiles', icon: 'grid_on' },
         // Before the profile exists, this is where you set it up.
         profile
           ? {
@@ -63,6 +64,7 @@ export function Layout() {
       ]
     : [
         { to: '/', label: 'Browse', icon: 'grid_view', end: true },
+        { to: '/tiles', label: 'Test tiles', icon: 'grid_on' },
         { to: '/signin', label: 'Sign in', icon: 'login' },
       ];
   const topLevel = destinations.some((d) => d.to === pathname);

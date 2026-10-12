@@ -18,7 +18,8 @@ export function BrowsePage() {
   const { results, error, retry } = useResults();
   const profiles = useAsync(() => backend.listProfiles(), []);
 
-  const groups = useMemo(() => (results ? groupResults(results) : null), [results]);
+  // Studio test tiles have their own page.
+  const groups = useMemo(() => (results ? groupResults(results.filter((r) => !r.official)) : null), [results]);
   const filtersKey = paramsFromFilters(filters).toString();
   const shown = useMemo(() => (groups ? filterGroups(groups, filters) : null), [groups, filters]);
   const facets = useMemo(() => (groups ? computeFacets(groups, filters) : null), [groups, filters]);

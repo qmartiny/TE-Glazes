@@ -60,9 +60,12 @@ export function ComboPage() {
 
   const title = groupTitle(group);
   const people = new Set(group.results.map((r) => r.userId)).size;
-  // The result you followed a link to comes first, then newest first.
+  // The result you followed a link to comes first, then studio test tiles, then newest first.
   const combos = [...(full.data ?? [])].sort(
-    (a, b) => Number(b.id === id) - Number(a.id === id) || b.createdAt.localeCompare(a.createdAt),
+    (a, b) =>
+      Number(b.id === id) - Number(a.id === id) ||
+      Number(b.official) - Number(a.official) ||
+      b.createdAt.localeCompare(a.createdAt),
   );
 
   async function onShare() {
@@ -220,6 +223,11 @@ function ResultBlock({
           {' · '}
           {formatDate(combo.createdAt)}
         </p>
+        {combo.official && (
+          <p className="private-note">
+            <Icon name="verified" /> Studio test tile
+          </p>
+        )}
         {combo.isPrivate && (
           <p className="private-note">
             <Icon name="lock" /> Private: only you can see this
@@ -227,10 +235,14 @@ function ResultBlock({
         )}
 
         <div className="chip-row chip-row-wrap" aria-label="Clay and kiln">
-          <Link to={browseLink({ clay: combo.clay })} className="chip chip-assist">
-            <Icon name="texture" className="chip-leading chip-icon-primary" />
-            <span className="chip-text">{combo.clay}</span>
-          </Link>
+          {combo.clays.map((c) => (
+            <Link key={c.name} to={browseLink({ clay: c.name })} className="chip chip-assist">
+              <Icon name="texture" className="chip-leading chip-icon-primary" />
+              <span className="chip-text">
+                {combo.clays.length > 1 && c.percent ? `${c.percent}% ${c.name}` : c.name}
+              </span>
+            </Link>
+          ))}
           <Link to={browseLink({ firing: combo.firing })} className="chip chip-assist">
             <Icon name="local_fire_department" className="chip-leading chip-icon-primary" />
             <span className="chip-text">{firingLabel(combo.firing)}</span>

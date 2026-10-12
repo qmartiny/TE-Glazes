@@ -7,8 +7,25 @@ const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null
 const slip = (name: string): Layer => ({ type: 'slip', name, application: null });
 
 let n = 0;
-function result(userId: string, clay: string, firing: Firing, layers: Layer[], description: string | null = null): ResultSummary {
-  return { id: `r${n++}`, userId, clay, firing, layers, description, photos: [], isPrivate: false, createdAt: `2026-10-0${n}` };
+function result(
+  userId: string,
+  clay: string,
+  firing: Firing,
+  layers: Layer[],
+  description: string | null = null,
+): ResultSummary {
+  return {
+    id: `r${n++}`,
+    userId,
+    clays: [{ name: clay, percent: null }],
+    firing,
+    layers,
+    description,
+    photos: [],
+    isPrivate: false,
+    official: false,
+    createdAt: `2026-10-0${n}`,
+  };
 }
 
 const results = [
