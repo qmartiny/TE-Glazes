@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { layerLabel, normalizeLayers } from './layers';
+import { comboKey, layerLabel, normalizeLayers } from './layers';
 
 describe('normalizeLayers', () => {
   it('reads combos saved before slips and oxides as glazes', () => {
@@ -32,5 +32,26 @@ describe('layerLabel', () => {
     expect(layerLabel({ type: 'oxide', name: 'Cobalt Oxide' })).toBe('Cobalt Oxide');
     expect(layerLabel({ type: 'oxide', name: 'Rutile' })).toBe('Rutile oxide');
     expect(layerLabel({ type: 'glaze', name: 'Honey' })).toBe('Honey');
+  });
+});
+
+describe('comboKey', () => {
+  it('depends on the layers and their order, not on how they were applied or spelt', () => {
+    const a = comboKey([
+      { type: 'glaze', name: 'Tenmoku' },
+      { type: 'glaze', name: 'Midnight Blue' },
+    ]);
+    expect(comboKey([{ type: 'glaze', name: ' tenmoku' }, { type: 'glaze', name: 'MIDNIGHT  blue' }])).toBe(a);
+    expect(comboKey([{ type: 'glaze', name: 'Midnight Blue' }, { type: 'glaze', name: 'Tenmoku' }])).not.toBe(a);
+    expect(comboKey([{ type: 'slip', name: 'Tenmoku' }, { type: 'glaze', name: 'Midnight Blue' }])).not.toBe(a);
+  });
+});
+
+describe('normalizeLayers spelling', () => {
+  it("uses the studio's spelling for listed names and keeps other names as typed", () => {
+    expect(normalizeLayers([{ type: 'glaze', name: '  tenmoku ' }, { type: 'glaze', name: ' My  Own ' }])).toEqual([
+      { type: 'glaze', name: 'Tenmoku', application: null },
+      { type: 'glaze', name: 'My  Own', application: null },
+    ]);
   });
 });

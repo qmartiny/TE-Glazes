@@ -1,15 +1,15 @@
 import { useState, type FormEvent } from 'react';
-import { Link, useNavigate, useParams } from 'react-router';
+import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
-import { invalidateComboCache } from '../components/ComboList';
 import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEditor';
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
 import { TextArea, TextField } from '../components/Fields';
 import { Icon } from '../components/Icon';
 import { CLAYS, FIRINGS } from '../config';
 import { backend } from '../lib/api';
-import { layerLabel } from '../lib/layers';
+import { comboKey, layerLabel } from '../lib/layers';
+import { invalidateResults, useResults } from '../lib/results';
 import { readPref, writePref } from '../lib/format';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboInput, Firing, Photo } from '../types';
@@ -21,8 +21,12 @@ interface LastUsed {
 
 export function ComboFormPage() {
   const { id } = useParams();
+  const [params] = useSearchParams();
   const { user } = useAuth();
   const existing = useAsync(() => (id ? backend.getCombo(id) : Promise.resolve(null)), [id]);
+  // "Add your result" on a combo page passes ?like=<post> to start with the same layers.
+  const like = id ? null : params.get('like');
+  const template = useAsync(() => (like ? backend.getCombo(like) : Promise.resolve(null)), [like]);
 
   if (id) {
     if (existing.loading) return <div className="spinner" aria-label="Loading" />;
@@ -32,17 +36,28 @@ export function ComboFormPage() {
       return <div className="notice">You can only edit your own combos.</div>;
     }
   }
-  return <ComboForm key={id ?? 'new'} initial={existing.data ?? null} />;
+  if (like && template.loading) return <div className="spinner" aria-label="Loading" />;
+  return (
+    <ComboForm
+      key={id ?? `new-${like ?? ''}`}
+      initial={id ? (existing.data ?? null) : null}
+      template={like ? (template.data ?? null) : null}
+    />
+  );
 }
 
-function ComboForm({ initial }: { initial: Combo | null }) {
+function ComboForm({ initial, template }: { initial: Combo | null; template: Combo | null }) {
   const { user } = useAuth();
   const navigate = useNavigate();
   const last = initial ? null : readPref<LastUsed>('last');
 
   const [photos, setPhotos] = useState<PhotoDraft[]>(() => initial?.photos.map(existingPhoto) ?? []);
   const [layers, setLayers] = useState<LayerDraft[]>(() =>
-    initial ? initial.layers.map((l) => newLayer(l.type, l.name, l.application ?? '')) : [newLayer()],
+    initial
+      ? initial.layers.map((l) => newLayer(l.type, l.name, l.application ?? ''))
+      : template
+        ? template.layers.map((l) => newLayer(l.type, l.name))
+        : [newLayer()],
   );
   const [title, setTitle] = useState(initial?.title ?? '');
   const [clay, setClay] = useState(initial?.clay ?? last?.clay ?? '');
@@ -51,6 +66,13 @@ function ComboForm({ initial }: { initial: Combo | null }) {
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  // Tell people when their layers match a combo others have already posted.
+  const { results } = useResults();
+  const named = layers.filter((l) => l.name.trim());
+  const draftKey = named.length && named.length === layers.length ? comboKey(named) : null;
+  const sameCombo =
+    draftKey && results ? results.filter((r) => r.id !== initial?.id && comboKey(r.layers) === draftKey) : [];
 
   async function onSubmit(e: FormEvent) {
     e.preventDefault();
@@ -95,7 +117,7 @@ function ComboForm({ initial }: { initial: Combo | null }) {
         await backend.deletePhotos(initial.photos.filter((p) => !kept.has(p.path)));
       }
       writePref('last', { clay: input.clay } satisfies LastUsed);
-      invalidateComboCache();
+      invalidateResults();
       navigate(`/c/${saved.id}`, { replace: true });
     } catch (err) {
       await backend.deletePhotos(uploaded).catch(() => undefined);
@@ -108,7 +130,7 @@ function ComboForm({ initial }: { initial: Combo | null }) {
 
   return (
     <form className="form" onSubmit={onSubmit}>
-      <h1 className="page-title">{initial ? 'Edit combo' : 'Add a combo'}</h1>
+      <h1 className="page-title">{initial ? 'Edit your result' : template ? 'Add your result' : 'Add a combo'}</h1>
 
       <fieldset disabled={saving}>
         <section className="form-section">
@@ -124,6 +146,16 @@ function ComboForm({ initial }: { initial: Combo | null }) {
             comes before it.
           </p>
           <LayerEditor layers={layers} onChange={setLayers} />
+          {sameCombo.length > 0 && (
+            <p className="info-banner" role="status">
+              <Icon name="photo_library" />
+              <span>
+                {layers.map(layerLabel).join(' + ')} already has {sameCombo.length}{' '}
+                {sameCombo.length === 1 ? 'result' : 'results'} from members. Yours will be added to the same combo,
+                so people can compare.
+              </span>
+            </p>
+          )}
         </section>
 
         <section className="form-section">
@@ -158,15 +190,11 @@ function ComboForm({ initial }: { initial: Combo | null }) {
         <section className="form-section">
           <h2 className="section-title">Notes</h2>
           <TextField
-            label="Name (optional)"
+            label="Nickname (optional)"
             value={title}
             maxLength={120}
             onChange={(e) => setTitle(e.target.value)}
-            supportingText={
-              layers.some((l) => l.name)
-                ? `Leave empty to use "${layers.filter((l) => l.name).map(layerLabel).join(' + ')}"`
-                : 'Leave empty to name it after the glazes'
-            }
+            supportingText="Shown on your result, e.g. Blue rim tenmoku. The combo itself is named after its layers."
           />
           <TextArea
             label="How you did it"

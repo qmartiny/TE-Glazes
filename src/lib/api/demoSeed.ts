@@ -80,6 +80,16 @@ export function demoCombos(): StoredCombo[] {
       createdAt: '2026-09-28T18:20:00Z',
     }),
     combo({
+      id: 'demo-7',
+      userId: 'demo-sam',
+      clay: 'Porcelain',
+      firing: 'oxidation',
+      layers: [glaze('Tenmoku', 'Dipped'), glaze('Midnight Blue', 'Dipped')],
+      description: 'Same pair on porcelain in the electric kiln. Much less run than in reduction, and the blue goes softer.',
+      photos: [tilePhoto({ clay: '#f4f1ec', base: ['#8a4a2a', '#3a2016'], top: ['#7f8fc4', '#4a5a96'] })],
+      createdAt: '2026-10-05T10:15:00Z',
+    }),
+    combo({
       id: 'demo-2',
       userId: 'demo-sam',
       clay: 'Porcelain',

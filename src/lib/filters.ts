@@ -1,11 +1,14 @@
-import type { Combo, ComboFilters, FacetRow, Firing, LayerType } from '../types';
-import { layerLabel } from './layers';
+import type { Combo, ComboFilters, Firing, Layer, LayerType, ResultSummary } from '../types';
+import { comboKey, layerLabel, normName } from './layers';
 
 export const FILTER_KEYS = ['glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
 export type FilterKey = (typeof FILTER_KEYS)[number];
 
 /** Filters that match a glaze, slip or oxide in any layer. */
 export const LAYER_FILTER_KEYS = ['glaze', 'slip', 'oxide'] as const satisfies readonly LayerType[];
+
+/** Filters that are about a particular result (one member's post). */
+const RESULT_FILTER_KEYS = ['clay', 'firing', 'user'] as const;
 
 export function filtersFromParams(params: URLSearchParams): ComboFilters {
   const filters: ComboFilters = {};
@@ -34,43 +37,84 @@ export function hasFilters(filters: ComboFilters): boolean {
   return FILTER_KEYS.some((key) => Boolean(filters[key]));
 }
 
-/** Does a combo (or facet row) match every active filter, optionally ignoring one? */
-export function matchesFilters(
-  row: FacetRow | Combo,
-  filters: ComboFilters,
-  ignore?: FilterKey,
-): boolean {
-  if (ignore !== 'clay' && filters.clay && row.clay !== filters.clay) return false;
-  if (ignore !== 'firing' && filters.firing && row.firing !== filters.firing) return false;
-  if (ignore !== 'user' && filters.user && row.userId !== filters.user) return false;
-  for (const type of LAYER_FILTER_KEYS) {
-    const name = filters[type];
-    if (ignore !== type && name && !row.layers.some((l) => l.type === type && l.name === name)) return false;
+// ---------------------------------------------------------------------------
+// Combos: everyone's posts with the same layers, in the same order
+// ---------------------------------------------------------------------------
+
+export interface ComboGroup {
+  key: string;
+  /** The layers as named in the newest post (how each was applied varies per post). */
+  layers: Layer[];
+  /** Newest first. */
+  results: ResultSummary[];
+}
+
+export function groupResults(results: ResultSummary[]): ComboGroup[] {
+  const sorted = [...results].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  const groups = new Map<string, ComboGroup>();
+  for (const result of sorted) {
+    const key = comboKey(result.layers);
+    const group = groups.get(key);
+    if (group) group.results.push(result);
+    else groups.set(key, { key, layers: result.layers.map((l) => ({ ...l, application: null })), results: [result] });
   }
+  return [...groups.values()];
+}
+
+export function groupTitle(group: Pick<ComboGroup, 'layers'>): string {
+  return group.layers.map(layerLabel).join(' + ') || 'Untitled combo';
+}
+
+function layersMatch(layers: Layer[], filters: ComboFilters, ignore?: FilterKey): boolean {
+  return LAYER_FILTER_KEYS.every((type) => {
+    const wanted = filters[type];
+    if (ignore === type || !wanted) return true;
+    return layers.some((l) => l.type === type && normName(l.name) === normName(wanted));
+  });
+}
+
+function resultMatches(result: ResultSummary, filters: ComboFilters, ignore?: FilterKey): boolean {
+  if (ignore !== 'clay' && filters.clay && normName(result.clay) !== normName(filters.clay)) return false;
+  if (ignore !== 'firing' && filters.firing && result.firing !== filters.firing) return false;
+  if (ignore !== 'user' && filters.user && result.userId !== filters.user) return false;
   return true;
 }
 
-export type Counts = Map<string, number>;
-
-export interface Facets {
-  glaze: Counts;
-  slip: Counts;
-  oxide: Counts;
-  clay: Counts;
-  firing: Counts;
-  user: Counts;
+/**
+ * The results in a combo that satisfy the filters. A combo shows up when at
+ * least one person's result matches (e.g. "on Porcelain, in oxidation").
+ */
+export function matchingResults(group: ComboGroup, filters: ComboFilters, ignore?: FilterKey): ResultSummary[] {
+  if (!layersMatch(group.layers, filters, ignore)) return [];
+  return group.results.filter((r) => resultMatches(r, filters, ignore));
 }
 
-function bump(counts: Counts, key: string | null | undefined) {
-  if (!key) return;
+export interface FilteredGroup {
+  group: ComboGroup;
+  /** The group's results that match the filters, newest first. */
+  results: ResultSummary[];
+}
+
+export function filterGroups(groups: ComboGroup[], filters: ComboFilters): FilteredGroup[] {
+  return groups.flatMap((group) => {
+    const results = matchingResults(group, filters);
+    return results.length ? [{ group, results }] : [];
+  });
+}
+
+export type Counts = Map<string, number>;
+export type Facets = Record<FilterKey, Counts>;
+
+function bump(counts: Counts, key: string) {
   counts.set(key, (counts.get(key) ?? 0) + 1);
 }
 
 /**
- * Counts for each filter dropdown. Each dimension is counted against the
- * other active filters, so "Tenmoku (3)" means 3 results if you pick it now.
+ * Counts for each filter dropdown, in combos. Each dimension is counted
+ * against the other active filters, so "Tenmoku (3)" means 3 combos if you
+ * pick it now.
  */
-export function computeFacets(rows: FacetRow[], filters: ComboFilters): Facets {
+export function computeFacets(groups: ComboGroup[], filters: ComboFilters): Facets {
   const facets: Facets = {
     glaze: new Map(),
     slip: new Map(),
@@ -79,16 +123,17 @@ export function computeFacets(rows: FacetRow[], filters: ComboFilters): Facets {
     firing: new Map(),
     user: new Map(),
   };
-  for (const row of rows) {
+  for (const group of groups) {
     for (const type of LAYER_FILTER_KEYS) {
-      if (!matchesFilters(row, filters, type)) continue;
-      // A glaze used twice in one combo still counts that combo once.
-      const names = new Set(row.layers.filter((l) => l.type === type).map((l) => l.name));
+      if (!matchingResults(group, filters, type).length) continue;
+      const names = new Set(group.layers.filter((l) => l.type === type).map((l) => l.name));
       for (const name of names) bump(facets[type], name);
     }
-    if (matchesFilters(row, filters, 'clay')) bump(facets.clay, row.clay);
-    if (matchesFilters(row, filters, 'firing')) bump(facets.firing, row.firing);
-    if (matchesFilters(row, filters, 'user')) bump(facets.user, row.userId);
+    for (const key of RESULT_FILTER_KEYS) {
+      const results = matchingResults(group, filters, key);
+      const values = new Set(results.map((r) => (key === 'user' ? r.userId : r[key])));
+      for (const value of values) bump(facets[key], value);
+    }
   }
   return facets;
 }
@@ -122,7 +167,20 @@ export function firingLabel(firing: Firing): string {
   return firing === 'oxidation' ? 'Oxidation' : 'Reduction';
 }
 
+/** A post's own name if it has one, otherwise its layers. */
 export function comboTitle(combo: Pick<Combo, 'title' | 'layers'>): string {
   if (combo.title?.trim()) return combo.title.trim();
   return combo.layers.map(layerLabel).join(' + ') || 'Untitled combo';
+}
+
+/** "Craft Crank", "Craft Crank, Porcelain", "Craft Crank, Porcelain +2" */
+export function summarize(values: string[], max = 2): string {
+  const unique = [...new Set(values)];
+  if (unique.length <= max) return unique.join(', ');
+  return `${unique.slice(0, max).join(', ')} +${unique.length - max}`;
+}
+
+export function firingsLabel(firings: Firing[]): string {
+  const unique = [...new Set(firings)];
+  return unique.length > 1 ? 'Oxidation & reduction' : firingLabel(unique[0] ?? 'oxidation');
 }
