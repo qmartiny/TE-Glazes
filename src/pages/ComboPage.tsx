@@ -46,15 +46,19 @@ export function ComboPage() {
 
   async function onShare() {
     const url = window.location.href;
-    try {
-      if (navigator.share) {
+    if (navigator.share) {
+      try {
         await navigator.share({ title, url });
-      } else {
-        await navigator.clipboard.writeText(url);
-        setShareNote('Link copied');
+        return;
+      } catch (err) {
+        if (err instanceof DOMException && err.name === 'AbortError') return; // closed the share sheet
       }
+    }
+    try {
+      await navigator.clipboard.writeText(url);
+      setShareNote('Link copied');
     } catch {
-      // Share sheet dismissed, or clipboard blocked — nothing to do.
+      setShareNote('Copy the address bar to share');
     }
   }
 
