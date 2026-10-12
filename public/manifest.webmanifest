@@ -1,6 +1,6 @@
 {
-  "name": "TE Glazes",
-  "short_name": "TE Glazes",
+  "name": "The Glaze Book",
+  "short_name": "Glaze Book",
   "description": "Share and find glaze combinations from the studio community.",
   "start_url": "./",
   "scope": "./",
