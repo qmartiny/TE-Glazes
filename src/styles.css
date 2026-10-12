@@ -399,6 +399,19 @@ a.card:active::after,
   font-weight: 700;
 }
 
+.nav-avatar {
+  display: grid;
+  place-items: center;
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: var(--md-primary);
+  color: var(--md-on-primary);
+  font-size: 0.6875rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
 /* FAB */
 .fab {
   display: grid;
@@ -1328,6 +1341,14 @@ a.card:active::after,
 .profile-edit {
   grid-column: 1 / -1;
   justify-self: start;
+}
+
+.section-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 12px;
 }
 
 @media (min-width: 600px) {

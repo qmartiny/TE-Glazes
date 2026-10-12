@@ -1,4 +1,4 @@
-import { Link, useParams } from 'react-router';
+import { Link, useNavigate, useParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { CardGrid, GridSkeleton, LoadError, ResultCard } from '../components/Cards';
 import { Icon } from '../components/Icon';
@@ -10,13 +10,21 @@ import { NotFoundPage } from './NotFoundPage';
 
 export function ProfilePage() {
   const { id = '' } = useParams();
-  const { user } = useAuth();
-  const { data: profile, error, loading } = useAsync(() => backend.getProfile(id), [id]);
+  const { user, profile: myProfile } = useAuth();
+  const navigate = useNavigate();
   const isMe = user?.id === id;
+  const { data, error, loading } = useAsync(() => backend.getProfile(id), [id]);
+  // Your own profile is already loaded, so it shows straight away.
+  const profile = (isMe && myProfile) || data;
 
   if (loading && !profile) return <div className="spinner" aria-label="Loading" />;
-  if (error) return <div className="notice notice-error">Couldn't load this profile: {error}</div>;
+  if (error && !profile) return <div className="notice notice-error">Couldn't load this profile: {error}</div>;
   if (!profile) return <NotFoundPage what="profile" />;
+
+  async function onSignOut() {
+    await backend.signOut();
+    navigate('/', { replace: true });
+  }
 
   return (
     <>
@@ -25,9 +33,8 @@ export function ProfilePage() {
           {initials(profile.displayName)}
         </div>
         <div>
-          <h1 className="page-title">{isMe ? 'My combos' : profile.displayName}</h1>
+          <h1 className="page-title">{profile.displayName}</h1>
           <p className="section-supporting">
-            {isMe && `${profile.displayName} · `}
             {profile.studio ? `${profile.studio} · ` : ''}
             Member since {formatDate(profile.createdAt)}
           </p>
@@ -41,6 +48,15 @@ export function ProfilePage() {
       </section>
 
       <ProfileResults userId={profile.id} isMe={isMe} name={profile.displayName} />
+
+      {isMe && user && (
+        <section className="account-extra">
+          <p className="section-supporting">Signed in as {user.email}</p>
+          <button type="button" className="btn btn-outlined" onClick={onSignOut}>
+            <Icon name="logout" /> Sign out
+          </button>
+        </section>
+      )}
     </>
   );
 }
@@ -67,12 +83,25 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
       </div>
     );
   }
+
+  const privateCount = isMe ? mine.filter((r) => r.isPrivate).length : 0;
   return (
-    <CardGrid
-      items={mine}
-      listKey={`profile|${userId}`}
-      itemKey={(r) => r.id}
-      render={(r) => <ResultCard result={r} />}
-    />
+    <section aria-labelledby="profile-combos">
+      <div className="section-head">
+        <h2 id="profile-combos" className="section-title">
+          {isMe ? 'My combos' : 'Combos'}
+        </h2>
+        <p className="section-supporting">
+          {mine.length} {mine.length === 1 ? 'result' : 'results'}
+          {privateCount > 0 && ` · ${privateCount} private`}
+        </p>
+      </div>
+      <CardGrid
+        items={mine}
+        listKey={`profile|${userId}`}
+        itemKey={(r) => r.id}
+        render={(r) => <ResultCard result={r} />}
+      />
+    </section>
   );
 }

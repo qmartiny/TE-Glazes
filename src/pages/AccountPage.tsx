@@ -52,7 +52,7 @@ export function AccountPage() {
   return (
     <div className="narrow">
       <form className="form" onSubmit={onSubmit}>
-        <h1 className="page-title">{settingUp ? 'Set up your profile' : 'Your profile'}</h1>
+        <h1 className="page-title">{settingUp ? 'Set up your profile' : 'Edit profile'}</h1>
         {settingUp && <p className="section-supporting">Tell other members who you are before adding combos.</p>}
         <fieldset disabled={saving}>
           <TextField
@@ -93,12 +93,15 @@ export function AccountPage() {
         </div>
       </form>
 
-      <section className="account-extra">
-        <p className="section-supporting">Signed in as {user.email}</p>
-        <button type="button" className="btn btn-outlined" onClick={onSignOut}>
-          <Icon name="logout" /> Sign out
-        </button>
-      </section>
+      {/* Once the profile exists, signing out lives on My profile. */}
+      {settingUp && (
+        <section className="account-extra">
+          <p className="section-supporting">Signed in as {user.email}</p>
+          <button type="button" className="btn btn-outlined" onClick={onSignOut}>
+            <Icon name="logout" /> Sign out
+          </button>
+        </section>
+      )}
     </div>
   );
 }
