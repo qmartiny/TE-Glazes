@@ -62,14 +62,21 @@ export function ProfilePage() {
   );
 }
 
-/** A member's own posts, newest first (shared and, for yourself, private). */
+/** A member's own posts, newest first (shared and, for yourself, private). Studio tiles live on Test tiles. */
 function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean; name: string }) {
   const { results, error, retry } = useResults();
   if (error && !results) return <LoadError error={error} retry={retry} />;
   if (!results) return <GridSkeleton />;
 
-  const mine = results.filter((r) => r.userId === userId);
+  const mine = results.filter((r) => r.userId === userId && !r.official);
+  const tiles = results.filter((r) => r.userId === userId && r.official).length;
+  const tilesNote = tiles > 0 && (
+    <p className="section-supporting profile-tiles">
+      <Icon name="verified" /> Posted {tiles} <Link to="/tiles">studio test {tiles === 1 ? 'tile' : 'tiles'}</Link>
+    </p>
+  );
   if (!mine.length) {
+    if (tiles > 0) return tilesNote;
     return isMe ? (
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
@@ -100,6 +107,7 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
           {privateCount > 0 && ` · ${privateCount} private`}
         </p>
       </div>
+      {tilesNote}
       <CardGrid
         items={mine}
         listKey={`profile|${userId}`}

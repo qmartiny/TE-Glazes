@@ -1,15 +1,15 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
-import { tileEntries } from './tiles';
+import { clayTileCounts, sortStudioTiles, tileEntries } from './tiles';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 
 let n = 0;
-function post(layers: Layer[], firing: Firing, official: boolean, createdAt: string): ResultSummary {
+function post(clay: string, layers: Layer[], firing: Firing, official: boolean, createdAt: string): ResultSummary {
   return {
     id: `r${n++}`,
     userId: 'u',
-    clays: [{ name: 'Craft Crank', percent: null }],
+    clays: [{ name: clay, percent: null }],
     firing,
     layers,
     description: null,
@@ -20,18 +20,21 @@ function post(layers: Layer[], firing: Firing, official: boolean, createdAt: str
   };
 }
 
-describe('tileEntries', () => {
-  const results = [
-    post([glaze('Tenmoku')], 'reduction', true, '2026-06-01'),
-    post([glaze('tenmoku')], 'reduction', true, '2026-07-01'), // newer tile for the same glaze and kiln
-    post([glaze('Tenmoku')], 'oxidation', true, '2026-06-02'),
-    post([glaze('Honey')], 'oxidation', false, '2026-06-03'), // a member's post, not a studio tile
-    post([glaze('Honey'), glaze('Tenmoku')], 'oxidation', true, '2026-06-04'), // not a single glaze
-    post([glaze('Ash Green')], 'reduction', true, '2026-06-05'), // not in the studio list
-  ];
+const results = [
+  post('Craft Crank', [glaze('Tenmoku')], 'reduction', true, '2026-06-01'),
+  post('craft crank', [glaze('tenmoku')], 'reduction', true, '2026-07-01'), // newer tile, same clay and kiln
+  post('Craft Crank', [glaze('Tenmoku')], 'oxidation', true, '2026-06-02'),
+  post('Porcelain', [glaze('Tenmoku')], 'reduction', true, '2026-06-03'),
+  post('Porcelain', [glaze('Honey')], 'reduction', false, '2026-06-03'), // a member's post, not a studio tile
+  post('Craft Crank', [glaze('Honey'), glaze('Tenmoku')], 'reduction', true, '2026-06-04'), // not a single glaze
+  post('Craft Crank', [glaze('Ash Green')], 'reduction', true, '2026-06-05'), // not in the studio list
+  post('Paper Clay', [glaze('Honey')], 'reduction', true, '2026-06-06'), // not a listed clay
+];
+const GLAZES = ['Shiny White', 'Tenmoku', 'Honey'];
 
+describe('tileEntries', () => {
   it('lists every studio glaze in order, then other glazes with tiles', () => {
-    expect(tileEntries(results, 'reduction', ['Shiny White', 'Tenmoku', 'Honey']).map((e) => e.glaze)).toEqual([
+    expect(tileEntries(results, 'Craft Crank', 'reduction', GLAZES).map((e) => e.glaze)).toEqual([
       'Shiny White',
       'Tenmoku',
       'Honey',
@@ -39,12 +42,45 @@ describe('tileEntries', () => {
     ]);
   });
 
-  it('shows the newest studio tile in the chosen kiln, and which kilns have one', () => {
-    const [, tenmoku, honey] = tileEntries(results, 'reduction', ['Shiny White', 'Tenmoku', 'Honey']);
+  it('shows the newest tile on the chosen clay in the chosen kiln', () => {
+    const [white, tenmoku, honey] = tileEntries(results, 'Craft Crank', 'reduction', GLAZES);
+    expect(white.tile).toBeNull();
     expect(tenmoku.tile?.createdAt).toBe('2026-07-01');
-    expect(tenmoku.kilns.sort()).toEqual(['oxidation', 'reduction']);
     expect(tenmoku.key).toBe('glaze:tenmoku');
     expect(honey.tile).toBeNull();
-    expect(tileEntries(results, 'oxidation', ['Tenmoku'])[0].tile?.createdAt).toBe('2026-06-02');
+    expect(tileEntries(results, 'Porcelain', 'reduction', GLAZES)[1].tile?.clays[0].name).toBe('Porcelain');
+    expect(tileEntries(results, 'Craft Crank', 'oxidation', GLAZES)[1].tile?.createdAt).toBe('2026-06-02');
+  });
+
+  it('counts the tiles a glaze has elsewhere', () => {
+    const [, tenmoku, honey] = tileEntries(results, 'Craft Crank', 'reduction', GLAZES);
+    expect(tenmoku.others).toBe(2); // electric on Craft Crank, gas on Porcelain
+    expect(honey.others).toBe(1); // gas on Paper Clay
+  });
+});
+
+describe('clayTileCounts', () => {
+  it('counts glazes with a tile per clay, in this kiln, with unlisted clays last', () => {
+    expect(clayTileCounts(results, 'reduction', ['Porcelain', 'Craft Crank', 'Reclaim'])).toEqual([
+      { clay: 'Porcelain', count: 1 },
+      { clay: 'Craft Crank', count: 2 }, // Tenmoku and Ash Green
+      { clay: 'Reclaim', count: 0 },
+      { clay: 'Paper Clay', count: 1 },
+    ]);
+  });
+});
+
+describe('sortStudioTiles', () => {
+  it("orders by the studio's clay list, then electric before gas", () => {
+    const tiles = results.filter((r) => r.official && r.layers.length === 1);
+    const order = sortStudioTiles(tiles, ['Porcelain', 'Craft Crank']).map((t) => `${t.clays[0].name}/${t.firing}`);
+    expect(order).toEqual([
+      'Porcelain/reduction',
+      'Craft Crank/oxidation',
+      'Craft Crank/reduction',
+      'craft crank/reduction',
+      'Craft Crank/reduction',
+      'Paper Clay/reduction',
+    ]);
   });
 });

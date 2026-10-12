@@ -6,6 +6,7 @@ import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEdito
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
 import { TextArea } from '../components/Fields';
 import { Icon } from '../components/Icon';
+import { showSnackbar } from '../components/Snackbar';
 import { FIRINGS } from '../config';
 import { backend } from '../lib/api';
 import { mixProblem, normalizeClays } from '../lib/clays';
@@ -28,10 +29,11 @@ export function ComboFormPage() {
   const { user } = useAuth();
   const existing = useAsync(() => (id ? backend.getCombo(id) : Promise.resolve(null)), [id]);
   // "Add your result" on a combo page passes ?like=<post> to start with the same layers;
-  // "Add tile" on the Test tiles page passes ?tile=<glaze>&firing=<kiln>.
+  // "Add tile" on the Test tiles page passes ?tile=<glaze>&clay=<clay>&firing=<kiln>.
   const like = id ? null : params.get('like');
   const tile = id || like ? null : params.get('tile');
   const tileFiring = FIRINGS.find((f) => f.value === params.get('firing'))?.value;
+  const tileClay = params.get('clay') ?? undefined;
   const template = useAsync(() => (like ? backend.getCombo(like) : Promise.resolve(null)), [like]);
 
   if (id) {
@@ -48,13 +50,14 @@ export function ComboFormPage() {
       key={id ?? `new-${like ?? ''}-${tile ?? ''}`}
       initial={id ? (existing.data ?? null) : null}
       template={like ? (template.data ?? null) : null}
-      tile={tile ? { glaze: tile, firing: tileFiring } : null}
+      tile={tile ? { glaze: tile, clay: tileClay, firing: tileFiring } : null}
     />
   );
 }
 
 interface TileStart {
   glaze: string;
+  clay?: string;
   firing?: Firing;
 }
 
@@ -85,7 +88,8 @@ function ComboForm({
           : [newLayer()],
   );
   const [clays, setClays] = useState<ClayDraft[]>(() => {
-    const start = initial?.clays ?? normalizeClays(last?.clays, last?.clay);
+    const start =
+      initial?.clays ?? (tile?.clay ? [{ name: tile.clay, percent: null }] : normalizeClays(last?.clays, last?.clay));
     return start.length ? start.map((c) => newClay(c.name, start.length > 1 ? c.percent : null)) : [newClay()];
   });
   const [firing, setFiring] = useState<Firing>(initial?.firing ?? tile?.firing ?? FIRINGS[0].value);
@@ -156,9 +160,20 @@ function ComboForm({
         const kept = new Set(finalPhotos.map((p) => p.path));
         await backend.deletePhotos(initial.photos.filter((p) => !kept.has(p.path)));
       }
-      writePref('last', { clays: input.clays } satisfies LastUsed);
+      if (!input.official) writePref('last', { clays: input.clays } satisfies LastUsed);
       invalidateResults();
-      navigate(`/c/${saved.id}`, { replace: true });
+      if (tile && input.official && !initial) {
+        // Back to the tiles, ready for the next one.
+        showSnackbar(`${input.layers[0].name} tile added`);
+        const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+        if (idx > 0) navigate(-1);
+        else
+          navigate(`/tiles?${new URLSearchParams({ clay: input.clays[0].name, firing: input.firing })}`, {
+            replace: true,
+          });
+      } else {
+        navigate(`/c/${saved.id}`, { replace: true });
+      }
     } catch (err) {
       await backend.deletePhotos(uploaded).catch(() => undefined);
       setError(`Couldn't save: ${errorMessage(err)}`);

@@ -916,9 +916,18 @@ a.card:active::after,
   margin-top: 8px;
 }
 
-.tiles-kiln {
-  max-width: 420px;
+.tiles-controls {
+  display: grid;
+  gap: 12px;
+  max-width: 720px;
   margin-bottom: 8px;
+}
+
+@media (min-width: 600px) {
+  .tiles-controls {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    align-items: center;
+  }
 }
 
 .card-content {
@@ -1057,6 +1066,64 @@ a.card:active::after,
   display: grid;
   gap: 24px;
   max-width: 720px;
+}
+
+/* Studio test tiles on a glaze's page: a strip of small tiles, one per clay and kiln */
+.studio-tiles {
+  display: grid;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+
+.tile-strip {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 104px;
+  gap: 8px;
+  overflow-x: auto;
+  padding: 2px 2px 8px;
+  scroll-snap-type: x proximity;
+  scrollbar-width: thin;
+}
+
+.tile-mini {
+  display: grid;
+  gap: 2px;
+  scroll-snap-align: start;
+  color: var(--md-on-surface);
+  text-decoration: none;
+}
+
+.tile-mini img,
+.tile-mini-noimg {
+  display: block;
+  width: 100%;
+  aspect-ratio: 1;
+  object-fit: cover;
+  border-radius: 12px;
+  background: var(--md-surface-container);
+  margin-bottom: 4px;
+}
+
+.tile-mini.selected img,
+.tile-mini.selected .tile-mini-noimg {
+  outline: 3px solid var(--md-primary);
+  outline-offset: -3px;
+}
+
+.tile-mini-clay {
+  font-size: 0.8125rem;
+  line-height: 1.125rem;
+  font-weight: 600;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.tile-mini-kiln {
+  font-size: 0.75rem;
+  line-height: 1rem;
+  color: var(--md-on-surface-variant);
 }
 
 .results {
@@ -1378,6 +1445,13 @@ a.card:active::after,
 .profile-edit {
   grid-column: 1 / -1;
   justify-self: start;
+}
+
+.profile-tiles {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 12px;
 }
 
 .section-head {
