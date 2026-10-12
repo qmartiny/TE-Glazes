@@ -30,6 +30,8 @@ export interface Backend {
   getProfile(id: string): Promise<Profile | null>;
   listProfiles(): Promise<Profile[]>;
   saveProfile(id: string, input: ProfileInput): Promise<Profile>;
+  /** Whether this member can post studio test tiles. */
+  isStudioAdmin(userId: string): Promise<boolean>;
 
   /** Every post the viewer can see, without notes or author details. Newest first. */
   listResults(): Promise<ResultSummary[]>;

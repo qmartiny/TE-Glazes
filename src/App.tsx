@@ -11,6 +11,7 @@ import { NotFoundPage } from './pages/NotFoundPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SignInPage } from './pages/SignInPage';
+import { TilesPage } from './pages/TilesPage';
 
 // Hash URLs (…/#/c/123) work on any static host without server config.
 const router = createHashRouter([
@@ -36,6 +37,7 @@ const router = createHashRouter([
           </RequireAuth>
         ),
       },
+      { path: 'tiles', element: <TilesPage /> },
       { path: 'u/:id', element: <ProfilePage /> },
       {
         path: 'account',

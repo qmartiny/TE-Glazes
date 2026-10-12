@@ -2,13 +2,14 @@ import { Fragment, useState, type ReactNode } from 'react';
 import { Link } from 'react-router';
 import { PAGE_SIZE } from '../config';
 import { backend } from '../lib/api';
+import { clayLabel, clayNames } from '../lib/clays';
 import { firingLabel, firingsLabel, groupTitle, summarize, type ComboGroup } from '../lib/filters';
 import type { Photo, ResultSummary } from '../types';
 import { Icon } from './Icon';
 
 export const comboLink = (key: string) => `/combo/${encodeURIComponent(key)}`;
 
-function CardMedia({ photo, badges }: { photo: Photo | undefined; badges: ReactNode }) {
+export function CardMedia({ photo, badges }: { photo: Photo | undefined; badges: ReactNode }) {
   return (
     <div className="card-media">
       {photo ? (
@@ -24,6 +25,12 @@ function CardMedia({ photo, badges }: { photo: Photo | undefined; badges: ReactN
 const PrivateBadge = () => (
   <span className="media-badge media-badge-start">
     <Icon name="lock" /> Private
+  </span>
+);
+
+export const StudioTileBadge = () => (
+  <span className="media-badge media-badge-start">
+    <Icon name="verified" /> Studio tile
   </span>
 );
 
@@ -55,7 +62,7 @@ export function GroupCard({
       <div className="card-content">
         <h3 className="card-title">{groupTitle(group)}</h3>
         <p className="card-text">
-          {summarize(results.map((r) => r.clay))} · {firingsLabel(results.map((r) => r.firing))}
+          {summarize(results.flatMap((r) => clayNames(r.clays)))} · {firingsLabel(results.map((r) => r.firing))}
         </p>
         <p className="card-author">{summarize(people)}</p>
       </div>
@@ -67,11 +74,14 @@ export function GroupCard({
 export function ResultCard({ result }: { result: ResultSummary }) {
   return (
     <Link to={`/c/${result.id}`} className="card combo-card">
-      <CardMedia photo={result.photos[0]} badges={result.isPrivate && <PrivateBadge />} />
+      <CardMedia
+        photo={result.photos[0]}
+        badges={result.official ? <StudioTileBadge /> : result.isPrivate && <PrivateBadge />}
+      />
       <div className="card-content">
         <h3 className="card-title">{groupTitle(result)}</h3>
         <p className="card-text">
-          {result.clay} · {firingLabel(result.firing)}
+          {clayLabel(result.clays)} · {firingLabel(result.firing)}
         </p>
       </div>
     </Link>

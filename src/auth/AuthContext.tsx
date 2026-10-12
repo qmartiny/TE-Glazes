@@ -5,6 +5,8 @@ import type { AuthUser, Profile } from '../types';
 interface AuthState {
   user: AuthUser | null;
   profile: Profile | null;
+  /** Can post studio test tiles. */
+  isStudioAdmin: boolean;
   /** True until we know whether someone is signed in (and have their profile). */
   loading: boolean;
   setProfile: (profile: Profile) => void;
@@ -17,6 +19,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [userKnown, setUserKnown] = useState(false);
   const [profile, setProfile] = useState<Profile | null>(null);
   const [profileFor, setProfileFor] = useState<string | null>(null);
+  const [isStudioAdmin, setIsStudioAdmin] = useState(false);
 
   useEffect(() => {
     let active = true;
@@ -38,17 +41,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (!user) {
       setProfile(null);
       setProfileFor(null);
+      setIsStudioAdmin(false);
       return;
     }
     let active = true;
-    backend
-      .getProfile(user.id)
-      .catch(() => null)
-      .then((p) => {
-        if (!active) return;
-        setProfile(p);
-        setProfileFor(user.id);
-      });
+    Promise.all([
+      backend.getProfile(user.id).catch(() => null),
+      backend.isStudioAdmin(user.id).catch(() => false),
+    ]).then(([p, admin]) => {
+      if (!active) return;
+      setProfile(p);
+      setIsStudioAdmin(admin);
+      setProfileFor(user.id);
+    });
     return () => {
       active = false;
     };
@@ -62,7 +67,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const loading = !userKnown || (user !== null && profileFor !== user.id);
 
   return (
-    <AuthContext.Provider value={{ user, profile, loading, setProfile: updateProfile }}>
+    <AuthContext.Provider value={{ user, profile, isStudioAdmin, loading, setProfile: updateProfile }}>
       {children}
     </AuthContext.Provider>
   );

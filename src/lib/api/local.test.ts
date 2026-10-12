@@ -3,7 +3,7 @@ import type { ComboInput } from '../../types';
 import { createLocalBackend } from './local';
 
 const input: ComboInput = {
-  clay: 'Porcelain',
+  clays: [{ name: 'Porcelain', percent: null }],
   firing: 'reduction',
   layers: [
     { type: 'slip', name: 'White', application: 'Brushed' },
@@ -12,6 +12,7 @@ const input: ComboInput = {
   description: 'Two dips',
   photos: [{ path: 'p', thumb: 't', width: 1, height: 1 }],
   isPrivate: false,
+  official: false,
 };
 
 // No IndexedDB under Node, so this exercises the in-memory fallback.
@@ -45,8 +46,13 @@ describe('demo backend', () => {
     expect(mine.map((r) => r.id)).toEqual([created.id]);
     expect(mine[0].layers.map((l) => l.name)).toEqual(['White', 'Faux Celadon']);
 
-    const updated = await backend.updateCombo(created.id, { ...input, clay: 'Special White' });
-    expect(updated.clay).toBe('Special White');
+    const mix = [
+      { name: 'Special White', percent: 60 },
+      { name: 'Reclaim', percent: 40 },
+    ];
+    const updated = await backend.updateCombo(created.id, { ...input, clays: mix });
+    expect(updated.clays).toEqual(mix);
+    expect((await backend.listResults()).find((r) => r.id === created.id)?.clays).toEqual(mix);
 
     await backend.deleteCombo(updated);
     expect(await backend.getCombo(created.id)).toBeNull();

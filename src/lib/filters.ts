@@ -1,5 +1,6 @@
 import type { ComboFilters, Firing, Layer, LayerType, ResultSummary } from '../types';
 import { FIRINGS } from '../config';
+import { clayNames } from './clays';
 import { comboKey, layerLabel, normName } from './layers';
 
 export const FILTER_KEYS = ['q', 'glaze', 'slip', 'oxide', 'clay', 'firing', 'user'] as const;
@@ -78,7 +79,9 @@ function layersMatch(layers: Layer[], filters: ComboFilters, ignore?: FilterKey)
 
 /** Every word of the search appears in the notes, clay or layer names. */
 export function textMatches(result: ResultSummary, layers: Layer[], query: string): boolean {
-  const haystack = normName([result.description ?? '', result.clay, ...layers.map(layerLabel)].join(' '));
+  const haystack = normName(
+    [result.description ?? '', ...clayNames(result.clays), ...layers.map(layerLabel)].join(' '),
+  );
   return normName(query)
     .split(' ')
     .every((word) => haystack.includes(word));
@@ -86,7 +89,10 @@ export function textMatches(result: ResultSummary, layers: Layer[], query: strin
 
 function resultMatches(result: ResultSummary, layers: Layer[], filters: ComboFilters, ignore?: FilterKey): boolean {
   if (ignore !== 'q' && filters.q && !textMatches(result, layers, filters.q)) return false;
-  if (ignore !== 'clay' && filters.clay && normName(result.clay) !== normName(filters.clay)) return false;
+  if (ignore !== 'clay' && filters.clay) {
+    const wanted = normName(filters.clay);
+    if (!result.clays.some((c) => normName(c.name) === wanted)) return false;
+  }
   if (ignore !== 'firing' && filters.firing && result.firing !== filters.firing) return false;
   if (ignore !== 'user' && filters.user && result.userId !== filters.user) return false;
   return true;
@@ -143,7 +149,9 @@ export function computeFacets(groups: ComboGroup[], filters: ComboFilters): Face
     }
     for (const key of RESULT_FILTER_KEYS) {
       const results = matchingResults(group, filters, key);
-      const values = new Set(results.map((r) => (key === 'user' ? r.userId : r[key])));
+      const values = new Set(
+        results.flatMap((r) => (key === 'user' ? [r.userId] : key === 'clay' ? clayNames(r.clays) : [r.firing])),
+      );
       for (const value of values) bump(facets[key], value);
     }
   }

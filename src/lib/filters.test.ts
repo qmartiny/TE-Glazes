@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import type { Firing, Layer, ResultSummary } from '../types';
+import type { ClayPart, Firing, Layer, ResultSummary } from '../types';
 import {
   buildOptions,
   computeFacets,
@@ -17,8 +17,26 @@ const slip = (name: string): Layer => ({ type: 'slip', name, application: null }
 const oxide = (name: string): Layer => ({ type: 'oxide', name, application: null });
 
 let n = 0;
-function result(userId: string, clay: string, firing: Firing, layers: Layer[], createdAt: string): ResultSummary {
-  return { id: `r${n++}`, userId, clay, firing, layers, description: null, photos: [], isPrivate: false, createdAt };
+function result(
+  userId: string,
+  clay: string | ClayPart[],
+  firing: Firing,
+  layers: Layer[],
+  createdAt: string,
+): ResultSummary {
+  const clays = typeof clay === 'string' ? [{ name: clay, percent: null }] : clay;
+  return {
+    id: `r${n++}`,
+    userId,
+    clays,
+    firing,
+    layers,
+    description: null,
+    photos: [],
+    isPrivate: false,
+    official: false,
+    createdAt,
+  };
 }
 
 const results: ResultSummary[] = [
@@ -72,6 +90,37 @@ describe('filterGroups', () => {
     expect(filterGroups(groups, { glaze: 'midnight blue' })).toHaveLength(2);
     expect(filterGroups(groups, { slip: 'Blue', oxide: 'Cobalt Oxide' })).toHaveLength(1);
     expect(filterGroups(groups, { glaze: 'Blue' })).toHaveLength(0);
+  });
+});
+
+describe('clay mixes', () => {
+  const mixGroups = groupResults([
+    result(
+      'kim',
+      [
+        { name: 'Craft Crank', percent: 50 },
+        { name: 'Reclaim', percent: 50 },
+      ],
+      'oxidation',
+      [glaze('Honey')],
+      '2026-10-02',
+    ),
+    result('lee', 'Reclaim', 'oxidation', [glaze('Honey')], '2026-10-01'),
+  ]);
+
+  it('finds a mix under each of its clays', () => {
+    expect(filterGroups(mixGroups, { clay: 'craft crank' })[0].results.map((r) => r.userId)).toEqual(['kim']);
+    expect(filterGroups(mixGroups, { clay: 'Reclaim' })[0].results.map((r) => r.userId)).toEqual(['kim', 'lee']);
+  });
+
+  it('counts each clay of a mix, once per combo', () => {
+    const facets = computeFacets(mixGroups, {});
+    expect(facets.clay.get('Craft Crank')).toBe(1);
+    expect(facets.clay.get('Reclaim')).toBe(1);
+  });
+
+  it('searches the clays in a mix', () => {
+    expect(filterGroups(mixGroups, { q: 'crank honey' })).toHaveLength(1);
   });
 });
 

@@ -65,6 +65,26 @@ create trigger on_auth_user_created
   for each row execute procedure public.handle_new_user();
 
 -- ---------------------------------------------------------------------------
+-- Studio team: members who can post the official studio test tiles.
+-- Only the SQL editor can change who's on it, e.g.:
+--   insert into public.studio_admins (user_id)
+--   select id from auth.users where email = 'someone@example.com';
+-- ---------------------------------------------------------------------------
+create table if not exists public.studio_admins (
+  user_id uuid primary key references auth.users (id) on delete cascade,
+  created_at timestamptz not null default now()
+);
+
+alter table public.studio_admins enable row level security;
+
+drop policy if exists "The studio team is visible to everyone" on public.studio_admins;
+create policy "The studio team is visible to everyone"
+  on public.studio_admins for select
+  using (true);
+
+grant select on public.studio_admins to anon, authenticated;
+
+-- ---------------------------------------------------------------------------
 -- Combinations: a glaze combo with photos, clay, firing and notes
 -- ---------------------------------------------------------------------------
 create table if not exists public.combinations (
@@ -88,6 +108,14 @@ create table if not exists public.combinations (
   created_at timestamptz not null default now(),
   updated_at timestamptz not null default now()
 );
+
+-- Added later; "add column if not exists" also upgrades older databases.
+-- Clays, usually one, several for a mix:
+-- [{"name": "Craft Crank", "percent": 50}, {"name": "Reclaim", "percent": 50}]
+-- (`clay` above keeps a readable label, e.g. "50% Craft Crank + 50% Reclaim".)
+alter table public.combinations add column if not exists clays jsonb;
+-- A studio test tile, posted by the studio team.
+alter table public.combinations add column if not exists official boolean not null default false;
 
 create index if not exists combinations_created_at_idx on public.combinations (created_at desc);
 create index if not exists combinations_user_id_idx on public.combinations (user_id);
@@ -137,6 +165,32 @@ alter table public.combinations add constraint combinations_layers_shape check (
   )
 );
 
+-- Clay mixes: fill in `clays` for combos saved with a single clay, and allow
+-- longer labels for mixes.
+update public.combinations
+set clays = jsonb_build_array(jsonb_build_object('name', clay, 'percent', null))
+where clays is null;
+
+alter table public.combinations drop constraint if exists combinations_clay_check;
+alter table public.combinations add constraint combinations_clay_check check (char_length(clay) between 1 and 300);
+
+alter table public.combinations drop constraint if exists combinations_clays_shape;
+alter table public.combinations add constraint combinations_clays_shape check (
+  clays is null or (
+    jsonb_typeof(clays) = 'array'
+    and jsonb_array_length(clays) between 1 and 4
+    and length(clays::text) <= 1000
+    and not jsonb_path_exists(
+      clays,
+      '$[*] ? (!(@.name.type() == "string") || (@.percent.type() == "number" && (@.percent < 1 || @.percent > 100)))'
+    )
+  )
+);
+
+-- Studio test tiles are always shared.
+alter table public.combinations drop constraint if exists combinations_official_shared;
+alter table public.combinations add constraint combinations_official_shared check (not (official and is_private));
+
 alter table public.combinations enable row level security;
 
 -- Anyone can browse shared combos (no sign-in needed); private ones are
@@ -147,15 +201,22 @@ create policy "Shared combos are visible to everyone"
   using (not is_private or user_id = (select auth.uid()));
 
 drop policy if exists "Users can add their own combos" on public.combinations;
+-- Only the studio team can post (or turn a post into) a studio test tile.
 create policy "Users can add their own combos"
   on public.combinations for insert to authenticated
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and (not official or exists (select 1 from public.studio_admins a where a.user_id = (select auth.uid())))
+  );
 
 drop policy if exists "Users can edit their own combos" on public.combinations;
 create policy "Users can edit their own combos"
   on public.combinations for update to authenticated
   using (user_id = (select auth.uid()))
-  with check (user_id = (select auth.uid()));
+  with check (
+    user_id = (select auth.uid())
+    and (not official or exists (select 1 from public.studio_admins a where a.user_id = (select auth.uid())))
+  );
 
 drop policy if exists "Users can delete their own combos" on public.combinations;
 create policy "Users can delete their own combos"

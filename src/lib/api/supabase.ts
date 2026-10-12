@@ -8,12 +8,14 @@ import type {
   Profile,
   ResultSummary,
 } from '../../types';
+import { clayLabel, normalizeClays } from '../clays';
 import { normalizeLayers } from '../layers';
 import type { Backend } from './backend';
 
 const BUCKET = 'photos';
 const COMBO_SELECT = '*, author:profiles(id, display_name, studio)';
-const RESULT_SELECT = 'id, user_id, clay, firing, layers, description, photos, is_private, created_at';
+// Everything but the author. (`*` also keeps browsing working if a newer column hasn't been added yet.)
+const RESULT_SELECT = '*';
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
 interface ProfileRow {
@@ -27,12 +29,14 @@ interface ProfileRow {
 interface ComboRow {
   id: string;
   user_id: string;
-  clay: string;
+  clay: string; // a readable label; `clays` has the details
+  clays: unknown; // see normalizeClays()
   firing: Firing;
   layers: unknown; // see normalizeLayers()
   description: string | null;
   photos: Photo[];
   is_private: boolean;
+  official?: boolean;
   created_at: string;
   updated_at: string;
   author: Pick<ProfileRow, 'id' | 'display_name' | 'studio'> | null;
@@ -40,7 +44,17 @@ interface ComboRow {
 
 type ResultRow = Pick<
   ComboRow,
-  'id' | 'user_id' | 'clay' | 'firing' | 'layers' | 'description' | 'photos' | 'is_private' | 'created_at'
+  | 'id'
+  | 'user_id'
+  | 'clay'
+  | 'clays'
+  | 'firing'
+  | 'layers'
+  | 'description'
+  | 'photos'
+  | 'is_private'
+  | 'official'
+  | 'created_at'
 >;
 
 function toProfile(row: ProfileRow): Profile {
@@ -60,12 +74,13 @@ function toCombo(row: ComboRow): Combo {
     author: row.author
       ? { id: row.author.id, displayName: row.author.display_name, studio: row.author.studio }
       : null,
-    clay: row.clay,
+    clays: normalizeClays(row.clays, row.clay),
     firing: row.firing,
     layers: normalizeLayers(row.layers),
     description: row.description,
     photos: row.photos ?? [],
     isPrivate: row.is_private,
+    official: row.official ?? false,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -73,12 +88,14 @@ function toCombo(row: ComboRow): Combo {
 
 function fromInput(input: ComboInput) {
   return {
-    clay: input.clay,
+    clay: clayLabel(input.clays).slice(0, 300),
+    clays: input.clays,
     firing: input.firing,
     layers: input.layers,
     description: input.description,
     photos: input.photos,
     is_private: input.isPrivate,
+    official: input.official,
   };
 }
 
@@ -174,6 +191,12 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       return toProfile(row as ProfileRow);
     },
 
+    async isStudioAdmin(userId) {
+      // Not an admin if the table isn't there yet (schema.sql not re-run).
+      const { data, error } = await sb.from('studio_admins').select('user_id').eq('user_id', userId).maybeSingle();
+      return !error && data !== null;
+    },
+
     async listResults() {
       // PostgREST returns at most 1000 rows per request, so read in pages.
       const PAGE = 1000;
@@ -194,12 +217,13 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
         (r): ResultSummary => ({
           id: r.id,
           userId: r.user_id,
-          clay: r.clay,
+          clays: normalizeClays(r.clays, r.clay),
           firing: r.firing,
           layers: normalizeLayers(r.layers),
           description: r.description,
           photos: r.photos ?? [],
           isPrivate: r.is_private,
+          official: r.official ?? false,
           createdAt: r.created_at,
         }),
       );
