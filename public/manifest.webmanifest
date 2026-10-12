@@ -1,0 +1,15 @@
+{
+  "name": "TE Glazes",
+  "short_name": "TE Glazes",
+  "description": "Share and find glaze combinations from the studio community.",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f2f3f1",
+  "theme_color": "#2443a0",
+  "icons": [
+    { "src": "icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "favicon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
