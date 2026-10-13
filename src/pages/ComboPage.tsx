@@ -12,7 +12,7 @@ import { CLAYS } from '../config';
 import { backend } from '../lib/api';
 import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGroup } from '../lib/filters';
 import { formatDate } from '../lib/format';
-import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
+import { comboKey, isStudioMaterial, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
 import { sortStudioTiles } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
@@ -146,7 +146,10 @@ export function ComboPage() {
                   <span className="list-avatar">{i + 1}</span>
                   <span className="list-text">
                     <span className="list-headline">{layer.name}</span>
-                    <span className="list-supporting">{layerTypeInfo(layer.type).label}</span>
+                    <span className="list-supporting">
+                      {layerTypeInfo(layer.type).label}
+                      {!isStudioMaterial(layer) && ` · not a studio ${layerTypeInfo(layer.type).label.toLowerCase()}`}
+                    </span>
                   </span>
                   <Icon name="chevron_right" className="list-trailing" />
                 </Link>

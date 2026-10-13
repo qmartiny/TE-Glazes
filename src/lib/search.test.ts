@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
 import { computeFacets, filterGroups, groupResults } from './filters';
-import { suggest } from './search';
+import { matchOptions, suggest } from './search';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 const slip = (name: string): Layer => ({ type: 'slip', name, application: null });
@@ -102,5 +102,20 @@ describe('free-text search', () => {
   it('only keeps the results whose notes match', () => {
     const [match] = filterGroups(groups, { q: 'runny' });
     expect(match.results.map((r) => r.userId)).toEqual(['maya']);
+  });
+});
+
+describe('matchOptions', () => {
+  const glazes = ['Blush Rutile', 'Gray Blue', 'Midnight Blue', 'Monet Blue', 'Tenmoku'];
+
+  it('lists everything when nothing is typed', () => {
+    expect(matchOptions('  ', glazes)).toEqual(glazes);
+  });
+
+  it('puts names starting with the text first, then word starts, then the rest', () => {
+    expect(matchOptions('bl', glazes)).toEqual(['Blush Rutile', 'Gray Blue', 'Midnight Blue', 'Monet Blue']);
+    expect(matchOptions('mo', glazes)).toEqual(['Monet Blue', 'Tenmoku']);
+    expect(matchOptions('MIDNIGHT  b', glazes)).toEqual(['Midnight Blue']);
+    expect(matchOptions('xyz', glazes)).toEqual([]);
   });
 });

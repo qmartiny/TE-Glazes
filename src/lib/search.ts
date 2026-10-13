@@ -56,3 +56,19 @@ export function suggest(
     .slice(0, limit)
     .map((x) => x.s);
 }
+
+/**
+ * Options matching what's typed, for a searchable picker: names starting with
+ * it first, then names with a word starting with it, then the rest that
+ * contain it, each in list order. Nothing typed lists everything.
+ */
+export function matchOptions(query: string, options: readonly string[]): string[] {
+  const q = normName(query);
+  if (!q) return [...options];
+  const scored = options.flatMap((option, i) => {
+    const name = normName(option);
+    const score = name.startsWith(q) ? 0 : name.split(' ').some((w) => w.startsWith(q)) ? 1 : name.includes(q) ? 2 : -1;
+    return score < 0 ? [] : [{ option, score, i }];
+  });
+  return scored.sort((a, b) => a.score - b.score || a.i - b.i).map((x) => x.option);
+}

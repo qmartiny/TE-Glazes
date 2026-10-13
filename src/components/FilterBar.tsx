@@ -44,9 +44,12 @@ interface Props {
   facets: Facets | null;
   profiles: Profile[];
   onChange: (filters: ComboFilters) => void;
+  /** Only combos made from the studio's glazes, slips and oxides. */
+  studioOnly: boolean;
+  onStudioOnly: (only: boolean) => void;
 }
 
-export function FilterBar({ filters, facets, profiles, onChange }: Props) {
+export function FilterBar({ filters, facets, profiles, onChange, studioOnly, onStudioOnly }: Props) {
   // When filters change, scroll the chips back to the start so the active ones are in view.
   const row = useRef<HTMLDivElement>(null);
   const key = paramsFromFilters(filters).toString();
@@ -77,6 +80,15 @@ export function FilterBar({ filters, facets, profiles, onChange }: Props) {
           <Icon name="close" className="chip-trailing" />
         </button>
       )}
+      <button
+        type="button"
+        className={`chip chip-filter${studioOnly ? ' selected' : ''}`}
+        aria-pressed={studioOnly}
+        onClick={() => onStudioOnly(!studioOnly)}
+      >
+        {studioOnly && <Icon name="check" className="chip-leading" />}
+        <span className="chip-text">Studio glazes only</span>
+      </button>
       <FilterChip
         label="Glaze"
         value={filters.glaze}

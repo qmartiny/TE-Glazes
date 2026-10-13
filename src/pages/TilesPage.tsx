@@ -3,8 +3,8 @@ import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AddComboButton } from '../components/AddComboButton';
 import { CardMedia, GridSkeleton, LoadError, glazeLink } from '../components/Cards';
-import { SelectField } from '../components/Fields';
 import { Icon } from '../components/Icon';
+import { PickerField } from '../components/PickerField';
 import { CLAYS, FIRINGS, GLAZES } from '../config';
 import { normalizeClays } from '../lib/clays';
 import { firingLabel } from '../lib/filters';
@@ -155,18 +155,15 @@ export function TilesPage() {
         ))}
       </div>
       <div className="tiles-controls">
-        <SelectField
+        <PickerField
+          key={by}
+          id="tiles-pick"
           label={by === 'clay' ? 'Clay' : 'Glaze'}
           aria-label={by === 'clay' ? 'Clay' : 'Glaze'}
           value={current}
-          onChange={(e) => choose(by === 'clay' ? { clay: e.target.value } : { glaze: e.target.value })}
-        >
-          {(counts ?? [{ name: current }]).map((c) => (
-            <option key={c.name} value={c.name}>
-              {c.name}
-            </option>
-          ))}
-        </SelectField>
+          options={(counts ?? []).map((c) => c.name)}
+          onChange={(v) => choose(by === 'clay' ? { clay: v } : { glaze: v })}
+        />
         <Segmented
           label="Kiln"
           name="tiles-firing"

@@ -1,9 +1,9 @@
 import { APPLICATIONS } from '../config';
 import { LAYER_TYPES, layerTypeInfo } from '../lib/layers';
 import type { LayerType } from '../types';
-import { ChoiceField } from './ChoiceField';
 import { SelectField } from './Fields';
 import { Icon } from './Icon';
+import { PickerField } from './PickerField';
 
 export interface LayerDraft {
   key: string;
@@ -78,14 +78,13 @@ export function LayerEditor({ layers, onChange }: Props) {
               )}
             </div>
             <div className="layer-fields">
-              <ChoiceField
+              <PickerField
                 id={`layer-${layer.key}`}
                 label={`Which ${info.label.toLowerCase()}`}
                 aria-label={`Layer ${i + 1}: ${info.label.toLowerCase()}`}
                 value={layer.name}
                 options={info.options}
-                placeholder={`Choose ${info.label.toLowerCase()}`}
-                otherLabel={`${info.label} name`}
+                custom={`Not a studio ${info.label.toLowerCase()}`}
                 required
                 onChange={(name) => update(i, { name })}
               />

@@ -12,9 +12,12 @@ export const APP_NAME = 'Glaze Book';
 export const SUPABASE_URL = 'https://ctdctrnaapynovtwkikl.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable__YtJahehrqHV0QO8ZMzIJA_nC1RIZVK';
 
-export const STUDIOS: string[] = ['Hoxton', 'Leyton', 'Highgate'];
+// The studio's lists. They're shown in alphabetical order, whatever the order here.
+const az = (list: string[]) => [...list].sort((a, b) => a.localeCompare(b));
 
-export const CLAYS: string[] = [
+export const STUDIOS: string[] = az(['Hoxton', 'Leyton', 'Highgate']);
+
+export const CLAYS: string[] = az([
   'Reclaim',
   'Craft Crank',
   'Lavafleck',
@@ -29,9 +32,9 @@ export const CLAYS: string[] = [
   'Vulcan Medium Black',
   'Vulcan Coarse Black',
   'Oxidising St Thomas',
-];
+]);
 
-export const GLAZES: string[] = [
+export const GLAZES: string[] = az([
   'Shiny White',
   'Cotton',
   'Satin Cream',
@@ -56,17 +59,17 @@ export const GLAZES: string[] = [
   'Lavender',
   'Sakura',
   'Matcha',
-];
+]);
 
-export const SLIPS: string[] = ['Yellow', 'Blue', 'Brown', 'White', 'Black'];
+export const SLIPS: string[] = az(['Yellow', 'Blue', 'Brown', 'White', 'Black']);
 
-export const OXIDES: string[] = [
+export const OXIDES: string[] = az([
   'Red Iron Oxide',
   'Black Iron Oxide',
   'Cobalt Oxide',
   'Copper Oxide',
   'Manganese Oxide',
-];
+]);
 
 export const APPLICATIONS: string[] = [
   'Dipped',

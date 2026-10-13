@@ -1,8 +1,8 @@
 import { CLAYS } from '../config';
 import { evenSplit, MAX_CLAYS } from '../lib/clays';
-import { ChoiceField } from './ChoiceField';
 import { TextField } from './Fields';
 import { Icon } from './Icon';
+import { PickerField } from './PickerField';
 
 export interface ClayDraft {
   key: string;
@@ -43,14 +43,13 @@ export function ClayEditor({ clays, onChange }: Props) {
     <div className="clay-editor">
       {clays.map((clay, i) => (
         <div key={clay.key} className={mixing ? 'clay-row' : undefined}>
-          <ChoiceField
+          <PickerField
             id={i === 0 ? 'clay' : `clay-${i + 1}`}
             label={mixing ? `Clay ${i + 1}` : 'Clay'}
             value={clay.name}
             options={CLAYS}
             onChange={(name) => update(i, { name })}
-            placeholder="Choose clay"
-            otherLabel="Clay name"
+            custom="Not a studio clay"
             required
           />
           {mixing && (
