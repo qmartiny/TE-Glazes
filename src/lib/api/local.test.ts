@@ -117,4 +117,19 @@ describe('demo backend', () => {
     expect(left).toHaveLength(others);
     await expect(backend.signIn('gone@x.com', 'secret1')).rejects.toThrow();
   });
+
+  it('lets the studio team move a post of one glaze to the test tiles and back', async () => {
+    const backend = createLocalBackend();
+    const results = await backend.listResults();
+    const single = results.find((r) => !r.official && r.layers.length === 1 && r.layers[0].type === 'glaze')!;
+    const layered = results.find((r) => !r.official && r.layers.length > 1)!;
+    await expect(backend.setStudioTile(single.id, true)).rejects.toThrow(/sign in/i);
+
+    await backend.signUp({ email: 'team@x.com', password: 'secret1', displayName: 'Team', studio: null, code: 'clay' });
+    await backend.setStudioTile(single.id, true);
+    expect((await backend.getCombo(single.id))?.official).toBe(true);
+    await expect(backend.setStudioTile(layered.id, true)).rejects.toThrow(/one glaze/);
+    await backend.setStudioTile(single.id, false);
+    expect((await backend.getCombo(single.id))?.official).toBe(false);
+  });
 });

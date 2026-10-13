@@ -14,7 +14,7 @@ import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGro
 import { formatDate } from '../lib/format';
 import { comboKey, isStudioMaterial, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
-import { sortStudioTiles } from '../lib/tiles';
+import { canBeStudioTile, sortStudioTiles } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboFilters, Layer } from '../types';
 import { NotFoundPage } from './NotFoundPage';
@@ -42,6 +42,7 @@ export function ComboPage() {
   const [deleting, setDeleting] = useState<Combo | null>(null);
   const [busy, setBusy] = useState(false);
   const [deleteError, setDeleteError] = useState<string | null>(null);
+  const [moving, setMoving] = useState(false);
 
   const group = useMemo((): ComboGroup | null | undefined => {
     if (!results) return undefined;
@@ -104,6 +105,23 @@ export function ComboPage() {
   // Your own result, or (for the studio team) removing someone else's shared post.
   const mine = deleting?.userId === user?.id;
   const canRemove = (c: Combo) => isStudioAdmin && c.userId !== user?.id && !c.isPrivate;
+  // The team can also move someone's post of one glaze to the test tiles, or back.
+  const canMove = (c: Combo) => canRemove(c) && (c.official || canBeStudioTile(c.layers));
+
+  async function onMove(c: Combo) {
+    setMoving(true);
+    try {
+      await backend.setStudioTile(c.id, !c.official);
+      invalidateResults();
+      retry();
+      full.reload();
+      showSnackbar(c.official ? 'Moved to Browse' : 'Moved to test tiles');
+    } catch (err) {
+      showSnackbar(`Couldn't move it: ${errorMessage(err)}`);
+    } finally {
+      setMoving(false);
+    }
+  }
 
   async function onDelete() {
     if (!deleting || !group) return;
@@ -189,6 +207,8 @@ export function ComboPage() {
                 isOwner={user?.id === openTile.userId}
                 canRemove={canRemove(openTile)}
                 onDelete={() => setDeleting(openTile)}
+                onMove={canMove(openTile) ? () => onMove(openTile) : undefined}
+                moving={moving}
               />
             )}
           </div>
@@ -208,6 +228,8 @@ export function ComboPage() {
             isOwner={user?.id === combo.userId}
             canRemove={canRemove(combo)}
             onDelete={() => setDeleting(combo)}
+            onMove={canMove(combo) ? () => onMove(combo) : undefined}
+            moving={moving}
           />
         ))}
       </section>
@@ -247,6 +269,8 @@ function ResultBlock({
   isOwner,
   canRemove,
   onDelete,
+  onMove,
+  moving = false,
 }: {
   combo: Combo;
   highlighted: boolean;
@@ -254,6 +278,9 @@ function ResultBlock({
   /** The studio team can remove other people's shared posts. */
   canRemove: boolean;
   onDelete: () => void;
+  /** The studio team can move someone's post to the test tiles, or back. */
+  onMove?: () => void;
+  moving?: boolean;
 }) {
   const applied = combo.layers.filter((l) => l.application);
   return (
@@ -316,6 +343,12 @@ function ResultBlock({
         )}
         {canRemove && (
           <div className="actions">
+            {onMove && (
+              <button type="button" className="btn btn-outlined" onClick={onMove} disabled={moving}>
+                <Icon name={combo.official ? 'grid_view' : 'grid_on'} />{' '}
+                {combo.official ? 'Move to Browse' : 'Move to test tiles'}
+              </button>
+            )}
             <button type="button" className="btn btn-text btn-danger" onClick={onDelete}>
               <Icon name="delete" /> Remove (studio team)
             </button>

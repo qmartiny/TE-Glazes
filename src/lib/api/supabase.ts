@@ -294,6 +294,10 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       await deletePhotos(combo.photos);
     },
 
+    async setStudioTile(id, tile) {
+      fail((await sb.rpc('set_studio_tile', { post_id: id, tile })).error);
+    },
+
     async uploadPhoto(userId, photo) {
       const id = crypto.randomUUID();
       const path = `${userId}/${id}.jpg`;

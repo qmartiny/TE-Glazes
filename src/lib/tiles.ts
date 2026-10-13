@@ -16,9 +16,14 @@ export interface TileEntry {
   others: number;
 }
 
+/** Whether a post could be a studio tile: one glaze on its own. */
+export function canBeStudioTile(layers: readonly { type: string }[]): boolean {
+  return layers.length === 1 && layers[0].type === 'glaze';
+}
+
 /** A studio tile is an official post of one glaze on its own. */
 export function isStudioTile(r: ResultSummary): boolean {
-  return r.official && r.layers.length === 1 && r.layers[0].type === 'glaze';
+  return r.official && canBeStudioTile(r.layers);
 }
 
 const onClay = (r: { clays: ClayPart[] }, clay: string) =>

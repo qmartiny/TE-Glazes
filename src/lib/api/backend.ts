@@ -49,6 +49,8 @@ export interface Backend {
   createCombo(userId: string, input: ComboInput): Promise<Combo>;
   updateCombo(id: string, input: ComboInput): Promise<Combo>;
   deleteCombo(combo: Combo): Promise<void>;
+  /** The studio team moves someone's shared post (one glaze) to the test tiles, or back. */
+  setStudioTile(id: string, tile: boolean): Promise<void>;
 
   uploadPhoto(userId: string, photo: PreparedPhoto): Promise<Photo>;
   deletePhotos(photos: Photo[]): Promise<void>;

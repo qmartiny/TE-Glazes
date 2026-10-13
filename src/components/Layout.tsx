@@ -47,6 +47,8 @@ export function Layout() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
   const [scrolled, setScrolled] = useState(false);
+  // On phones the add button shows its label, and shrinks to just + while scrolling down.
+  const [fabSmall, setFabSmall] = useState(false);
 
   // On a members-only site, signed-out visitors only get the sign-in and privacy pages: no navigation.
   const gated = MEMBERS_ONLY && !user;
@@ -73,13 +75,24 @@ export function Layout() {
   const topLevel = destinations.some((d) => d.to === pathname);
   const showFab = !gated && !NO_FAB.some((re) => re.test(pathname));
 
-  // The top app bar picks up a tint once the page scrolls under it.
+  // The top app bar picks up a tint once the page scrolls under it, and the
+  // add button shrinks while scrolling down.
   useEffect(() => {
-    const onScroll = () => setScrolled(window.scrollY > 4);
+    let lastY = window.scrollY;
+    const onScroll = () => {
+      const y = window.scrollY;
+      setScrolled(y > 4);
+      // Ignore small wobbles; near the top it always shows the label.
+      if (y < 64) setFabSmall(false);
+      else if (Math.abs(y - lastY) < 8) return;
+      else setFabSmall(y > lastY);
+      lastY = y;
+    };
     onScroll();
     window.addEventListener('scroll', onScroll, { passive: true });
     return () => window.removeEventListener('scroll', onScroll);
   }, []);
+  useEffect(() => setFabSmall(false), [pathname]); // a new page starts with the label showing
 
   function goBack() {
     // React Router keeps its own history index; fall back to Browse on a fresh tab.
@@ -90,24 +103,21 @@ export function Layout() {
 
   // On Test tiles, the studio team's button adds a tile instead of a post.
   const tileFab = isStudioAdmin && pathname === '/tiles';
-  const fab = (compact: boolean) =>
-    tileFab ? (
-      <AddComboButton
-        to={addTileLink}
-        className={compact ? 'fab fab-extended' : 'fab'}
-        label={compact ? undefined : 'Add a test tile'}
-      >
-        <Icon name="add_a_photo" />
-        {compact && 'Add tile'}
-      </AddComboButton>
-    ) : (
-      <AddComboButton className="fab" label="Add a combo">
-        <Icon name="add" />
-      </AddComboButton>
-    );
+  const fabLabel = tileFab ? 'Add tile' : 'Add glaze';
+  // Labelled on phones; just + in the side rail on wider screens, with the label as a tooltip.
+  const fab = (compact: boolean) => (
+    <AddComboButton
+      to={tileFab ? addTileLink : undefined}
+      className={compact ? `fab fab-extended${fabSmall ? ' fab-small' : ''}` : 'fab'}
+      label={compact ? undefined : fabLabel}
+    >
+      <Icon name="add" />
+      {compact && <span className="fab-label">{fabLabel}</span>}
+    </AddComboButton>
+  );
 
   return (
-    <div className={`app${gated ? ' app-gated' : ''}`}>
+    <div className={`app${gated ? ' app-gated' : ''}${showFab ? ' has-fab' : ''}`}>
       {!gated && (
         <nav className="nav-rail" aria-label="Main">
           {showFab ? fab(false) : <span className="fab-placeholder" />}

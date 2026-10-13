@@ -257,7 +257,7 @@ function TileCard({
         {note && <p className="card-text">{note}</p>}
         {isStudioAdmin && (
           <AddComboButton to={`/new?${new URLSearchParams(add)}`} className="btn btn-tonal tile-add">
-            <Icon name="add_a_photo" /> Add tile
+            <Icon name="add" /> Add tile
           </AddComboButton>
         )}
       </div>

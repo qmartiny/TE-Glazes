@@ -12,6 +12,7 @@ import { backend } from '../lib/api';
 import { mixProblem, normalizeClays } from '../lib/clays';
 import { comboKey, layerLabel } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
+import { canBeStudioTile } from '../lib/tiles';
 import { readPref, writePref } from '../lib/format';
 import { clearHandedOffPhotos, peekHandedOffPhotos } from '../lib/photoHandoff';
 import { errorMessage, useAsync } from '../lib/useAsync';
@@ -125,7 +126,7 @@ function ComboForm({
     const mixError = mixProblem(cleanClays.map((c) => c.percent));
     if (mixError) return setError(mixError);
     if (!cleanLayers.length) return setError('Add at least one glaze, slip or oxide.');
-    if (official && (cleanLayers.length !== 1 || cleanLayers[0].type !== 'glaze')) {
+    if (official && !canBeStudioTile(cleanLayers)) {
       return setError('A studio test tile is one glaze on its own.');
     }
 
