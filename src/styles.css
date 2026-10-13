@@ -928,6 +928,17 @@ a.card:active::after,
     grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
     align-items: center;
   }
+  .tiles-controls > :first-child {
+    grid-column: 1 / -1;
+    max-width: 360px;
+  }
+}
+
+.tiles-glaze-count {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
 }
 
 .card-content {
@@ -1262,6 +1273,11 @@ a.card:active::after,
   font-size: 1rem;
   line-height: 1.5rem;
   overflow-wrap: anywhere;
+}
+
+.list-trailing {
+  margin-left: auto;
+  color: var(--md-on-surface-variant);
 }
 
 .list-supporting {

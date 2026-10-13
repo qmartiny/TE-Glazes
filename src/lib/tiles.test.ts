@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
-import { clayTileCounts, sortStudioTiles, tileEntries } from './tiles';
+import {
+  clayTileCounts,
+  glazeTileCounts,
+  glazeTileEntries,
+  sortStudioTiles,
+  studioTileCounts,
+  tileEntries,
+} from './tiles';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 
@@ -67,6 +74,37 @@ describe('clayTileCounts', () => {
       { clay: 'Reclaim', count: 0 },
       { clay: 'Paper Clay', count: 1 },
     ]);
+  });
+});
+
+describe('glazeTileEntries', () => {
+  it('shows the glaze on every clay, newest tile per clay, unlisted clays last', () => {
+    const entries = glazeTileEntries(results, 'tenmoku', 'reduction', ['Porcelain', 'Craft Crank', 'Reclaim']);
+    expect(entries.map((e) => [e.clay, e.tile?.createdAt ?? null, e.otherKiln])).toEqual([
+      ['Porcelain', '2026-06-03', false],
+      ['Craft Crank', '2026-07-01', true],
+      ['Reclaim', null, false],
+    ]);
+    expect(glazeTileEntries(results, 'Honey', 'reduction', ['Porcelain']).map((e) => e.clay)).toEqual([
+      'Porcelain',
+      'Paper Clay',
+    ]);
+  });
+});
+
+describe('glazeTileCounts', () => {
+  it('counts the clays each glaze has a tile on, in this kiln', () => {
+    expect(glazeTileCounts(results, 'reduction', ['Tenmoku', 'Honey', 'Cotton'])).toEqual([
+      { glaze: 'Tenmoku', count: 2 },
+      { glaze: 'Honey', count: 1 },
+      { glaze: 'Cotton', count: 0 },
+      { glaze: 'Ash Green', count: 1 },
+    ]);
+  });
+
+  it('counts all studio tiles per glaze for combo pages', () => {
+    expect(studioTileCounts(results).get('tenmoku')).toBe(4);
+    expect(studioTileCounts(results).has('cotton')).toBe(false);
   });
 });
 

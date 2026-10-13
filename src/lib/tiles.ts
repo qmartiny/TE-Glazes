@@ -76,6 +76,59 @@ export function clayTileCounts(
   }));
 }
 
+export interface ClayTileEntry {
+  clay: string;
+  /** The newest studio tile of the chosen glaze on this clay, in the chosen kiln. */
+  tile: ResultSummary | null;
+  /** There's a tile of it on this clay in the other kiln. */
+  otherKiln: boolean;
+}
+
+/** One entry per clay for the chosen glaze and kiln: the glaze on every clay. */
+export function glazeTileEntries(
+  results: ResultSummary[],
+  glaze: string,
+  firing: Firing,
+  clays: readonly string[],
+): ClayTileEntry[] {
+  const tiles = results.filter((r) => isStudioTile(r) && normName(r.layers[0].name) === normName(glaze));
+  return withExtras(
+    clays,
+    tiles.flatMap((t) => clayNames(t.clays)),
+  ).map((clay) => {
+    const onThis = tiles.filter((t) => onClay(t, clay));
+    const here = onThis.filter((t) => t.firing === firing).sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+    return { clay, tile: here[0] ?? null, otherKiln: onThis.length > here.length };
+  });
+}
+
+/** Each glaze, with how many clays have a studio tile of it in this kiln. */
+export function glazeTileCounts(
+  results: ResultSummary[],
+  firing: Firing,
+  glazes: readonly string[],
+): { glaze: string; count: number }[] {
+  const tiles = results.filter((r) => isStudioTile(r) && r.firing === firing);
+  return withExtras(
+    glazes,
+    tiles.map((t) => t.layers[0].name),
+  ).map((glaze) => {
+    const mine = tiles.filter((t) => normName(t.layers[0].name) === normName(glaze));
+    return { glaze, count: new Set(mine.flatMap((t) => clayNames(t.clays).map(normName))).size };
+  });
+}
+
+/** How many studio tiles each glaze has, in any kiln, by normalised glaze name. */
+export function studioTileCounts(results: ResultSummary[]): Map<string, number> {
+  const counts = new Map<string, number>();
+  for (const r of results) {
+    if (!isStudioTile(r)) continue;
+    const k = normName(r.layers[0].name);
+    counts.set(k, (counts.get(k) ?? 0) + 1);
+  }
+  return counts;
+}
+
 /** Studio tiles in the studio's clay order, electric kiln before gas. */
 export function sortStudioTiles<T extends { clays: ClayPart[]; firing: Firing }>(
   tiles: T[],

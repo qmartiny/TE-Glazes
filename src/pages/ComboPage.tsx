@@ -12,9 +12,9 @@ import { backend } from '../lib/api';
 import { clayLabel } from '../lib/clays';
 import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGroup } from '../lib/filters';
 import { formatDate } from '../lib/format';
-import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
+import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo, normName } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
-import { sortStudioTiles } from '../lib/tiles';
+import { sortStudioTiles, studioTileCounts } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { Combo, ComboFilters, Layer, ResultSummary } from '../types';
 import { NotFoundPage } from './NotFoundPage';
@@ -54,6 +54,7 @@ export function ComboPage() {
     return groupResults(results).find((g) => g.key === wanted) ?? null;
   }, [results, key, id]);
 
+  const tileCounts = useMemo(() => (results ? studioTileCounts(results) : new Map<string, number>()), [results]);
   const ids = group?.results.map((r) => r.id) ?? [];
   const full = useAsync(() => (ids.length ? backend.getCombos(ids) : Promise.resolve([])), [ids.join(',')]);
 
@@ -136,17 +137,29 @@ export function ComboPage() {
             {sectionTitle(group.layers)} <span className="section-hint">in the order applied</span>
           </h2>
           <ul className="list">
-            {group.layers.map((layer, i) => (
-              <li key={i}>
-                <Link to={browseLink({ [layer.type]: layer.name })} className="list-item">
-                  <span className="list-avatar">{i + 1}</span>
-                  <span className="list-text">
-                    <span className="list-headline">{layer.name}</span>
-                    <span className="list-supporting">{layerTypeInfo(layer.type).label}</span>
-                  </span>
-                </Link>
-              </li>
-            ))}
+            {group.layers.map((layer, i) => {
+              // A glaze opens its studio test tiles (on every clay); slips and oxides open Browse.
+              const tiles = layer.type === 'glaze' ? (tileCounts.get(normName(layer.name)) ?? 0) : 0;
+              const to =
+                layer.type === 'glaze'
+                  ? `/tiles?${new URLSearchParams({ glaze: layer.name })}`
+                  : browseLink({ [layer.type]: layer.name });
+              return (
+                <li key={i}>
+                  <Link to={to} className="list-item">
+                    <span className="list-avatar">{i + 1}</span>
+                    <span className="list-text">
+                      <span className="list-headline">{layer.name}</span>
+                      <span className="list-supporting">
+                        {layerTypeInfo(layer.type).label}
+                        {tiles > 0 && ` · ${tiles} studio test ${tiles === 1 ? 'tile' : 'tiles'}`}
+                      </span>
+                    </span>
+                    {layer.type === 'glaze' && <Icon name="grid_on" className="list-trailing" />}
+                  </Link>
+                </li>
+              );
+            })}
           </ul>
         </section>
 
