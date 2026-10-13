@@ -31,6 +31,7 @@ export const ICONS = [
   'texture',
   'verified',
   'water_drop',
+  'zoom_in',
 ] as const;
 
 export type IconName = (typeof ICONS)[number];

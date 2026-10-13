@@ -6,12 +6,12 @@
     <title>Glaze Book</title>
     <meta name="description" content="Share and find glaze combinations from the studio community." />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#151311" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
     <script>
-      // Apply a saved Light/Dark choice before the first paint (see src/lib/theme.ts).
+      // Light unless Dark or Auto was chosen: apply it before the first paint (see src/lib/theme.ts).
       try {
         var theme = JSON.parse(localStorage.getItem('te-glazes:theme'));
-        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        if (theme === 'dark' || theme === 'auto') document.documentElement.dataset.theme = theme;
       } catch (e) {}
     </script>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
@@ -28,7 +28,7 @@
     <!-- Material Symbols, limited to the icons listed in src/components/Icon.tsx -->
     <link
       rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=account_circle,add,add_a_photo,arrow_back,arrow_downward,arrow_drop_down,arrow_upward,check,chevron_right,close,delete,edit,error,grid_on,grid_view,local_fire_department,lock,login,logout,palette,photo_library,science,search,search_off,settings,share,texture,verified,water_drop&display=block"
+      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Rounded:opsz,wght,FILL,GRAD@24,400,0..1,0&icon_names=account_circle,add,add_a_photo,arrow_back,arrow_downward,arrow_drop_down,arrow_upward,check,chevron_right,close,delete,edit,error,grid_on,grid_view,local_fire_department,lock,login,logout,palette,photo_library,science,search,search_off,settings,share,texture,verified,water_drop,zoom_in&display=block"
     />
   </head>
   <body>
