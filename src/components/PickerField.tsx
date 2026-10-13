@@ -17,18 +17,30 @@ interface Props {
    * The text says what that means, e.g. "Not a studio glaze".
    */
   custom?: string;
+  /** Other names members have used, offered after the listed ones. */
+  suggestions?: readonly string[];
 }
 
 interface Item {
   value: string;
-  custom: boolean;
+  kind: 'listed' | 'used' | 'custom';
 }
 
 /**
  * A searchable dropdown: tap to see the whole list, or type a few letters to
  * narrow it down. With `custom`, anything typed can be used as it is.
  */
-export function PickerField({ id, label, value, options, onChange, required, custom, ...rest }: Props) {
+export function PickerField({
+  id,
+  label,
+  value,
+  options,
+  onChange,
+  required,
+  custom,
+  suggestions = [],
+  ...rest
+}: Props) {
   const [text, setText] = useState(value);
   // What's been typed since the field was opened; null shows the whole list.
   const [query, setQuery] = useState<string | null>(null);
@@ -49,9 +61,14 @@ export function PickerField({ id, label, value, options, onChange, required, cus
   }, [active]);
 
   const typed = (query ?? '').trim();
-  const listed = (name: string) => options.find((o) => normName(o) === normName(name));
-  const items: Item[] = (typed ? matchOptions(typed, options) : options).map((o) => ({ value: o, custom: false }));
-  if (custom !== undefined && typed && !listed(typed)) items.push({ value: typed, custom: true });
+  const studio = (name: string) => options.find((o) => normName(o) === normName(name));
+  // A name matching a listed one, or one members already use, takes that spelling.
+  const listed = (name: string) => studio(name) ?? suggestions.find((o) => normName(o) === normName(name));
+  const items: Item[] = [
+    ...(typed ? matchOptions(typed, options) : options).map((o) => ({ value: o, kind: 'listed' as const })),
+    ...(typed ? matchOptions(typed, suggestions) : suggestions).map((o) => ({ value: o, kind: 'used' as const })),
+  ];
+  if (custom !== undefined && typed && !listed(typed)) items.push({ value: typed, kind: 'custom' });
   const showList = open && items.length > 0;
 
   function pick(item: Item) {
@@ -101,7 +118,7 @@ export function PickerField({ id, label, value, options, onChange, required, cus
     }
   }
 
-  const isCustom = custom !== undefined && value.trim() !== '' && !listed(value);
+  const isCustom = custom !== undefined && value.trim() !== '' && !studio(value);
 
   return (
     <div className="picker">
@@ -161,16 +178,19 @@ export function PickerField({ id, label, value, options, onChange, required, cus
           >
             {items.map((item, i) => (
               <li
-                key={`${item.custom ? '+' : ''}${item.value}`}
+                key={`${item.kind}:${item.value}`}
                 id={`${listId}-${i}`}
                 role="option"
                 aria-selected={i === active}
                 className={i === active ? 'active' : undefined}
                 onClick={() => pick(item)}
               >
-                {item.custom && <Icon name="add" />}
-                <span className="search-option-label">{item.custom ? `Use “${item.value}”` : item.value}</span>
-                {item.custom && <span className="search-option-meta">{custom}</span>}
+                {item.kind === 'custom' && <Icon name="add" />}
+                <span className="search-option-label">
+                  {item.kind === 'custom' ? `Use “${item.value}”` : item.value}
+                </span>
+                {item.kind === 'custom' && <span className="search-option-meta">{custom}</span>}
+                {item.kind === 'used' && <span className="search-option-meta">Used by members</span>}
               </li>
             ))}
           </ul>

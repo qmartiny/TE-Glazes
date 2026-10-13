@@ -1,5 +1,7 @@
-import { APPLICATIONS } from '../config';
-import { LAYER_TYPES, layerTypeInfo } from '../lib/layers';
+import { useMemo } from 'react';
+import { APPLICATIONS, CLAYS } from '../config';
+import { LAYER_TYPES, layerTypeInfo, memberNames } from '../lib/layers';
+import { useResults } from '../lib/results';
 import type { LayerType } from '../types';
 import { SelectField } from './Fields';
 import { Icon } from './Icon';
@@ -27,6 +29,8 @@ interface Props {
 }
 
 export function LayerEditor({ layers, onChange }: Props) {
+  const { results } = useResults();
+  const used = useMemo(() => memberNames(results ?? [], CLAYS), [results]);
   const update = (i: number, patch: Partial<LayerDraft>) =>
     onChange(layers.map((l, j) => (j === i ? { ...l, ...patch } : l)));
   const move = (i: number, by: number) => {
@@ -85,6 +89,7 @@ export function LayerEditor({ layers, onChange }: Props) {
                 value={layer.name}
                 options={info.options}
                 custom={`Not a studio ${info.label.toLowerCase()}`}
+                suggestions={used[layer.type]}
                 required
                 onChange={(name) => update(i, { name })}
               />

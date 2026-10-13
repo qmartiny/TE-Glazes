@@ -1,5 +1,8 @@
+import { useMemo } from 'react';
 import { CLAYS } from '../config';
 import { evenSplit, MAX_CLAYS } from '../lib/clays';
+import { memberNames } from '../lib/layers';
+import { useResults } from '../lib/results';
 import { TextField } from './Fields';
 import { Icon } from './Icon';
 import { PickerField } from './PickerField';
@@ -35,6 +38,8 @@ interface Props {
 
 /** One clay, or a mix of several with optional percentages (e.g. 50% Craft Crank + 50% Reclaim). */
 export function ClayEditor({ clays, onChange }: Props) {
+  const { results } = useResults();
+  const usedClays = useMemo(() => memberNames(results ?? [], CLAYS).clay, [results]);
   const mixing = clays.length > 1;
   const update = (i: number, patch: Partial<ClayDraft>) =>
     onChange(clays.map((c, j) => (j === i ? { ...c, ...patch } : c)));
@@ -50,6 +55,7 @@ export function ClayEditor({ clays, onChange }: Props) {
             options={CLAYS}
             onChange={(name) => update(i, { name })}
             custom="Not a studio clay"
+            suggestions={usedClays}
             required
           />
           {mixing && (
