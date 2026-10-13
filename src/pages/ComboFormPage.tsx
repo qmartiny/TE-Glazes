@@ -222,8 +222,7 @@ function ComboForm({
               <Icon name="photo_library" />
               <span>
                 {layers.map(layerLabel).join(' + ')} already has {sameCombo.length}{' '}
-                {sameCombo.length === 1 ? 'result' : 'results'} from members. Yours will be added to the same combo,
-                so people can compare.
+                {sameCombo.length === 1 ? 'result' : 'results'} from members. Yours will be added to the same combo.
               </span>
             </p>
           )}

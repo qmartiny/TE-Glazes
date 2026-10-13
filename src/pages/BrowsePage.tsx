@@ -5,7 +5,6 @@ import { CardGrid, GridSkeleton, GroupCard, LoadError } from '../components/Card
 import { FilterBar } from '../components/FilterBar';
 import { Icon } from '../components/Icon';
 import { SearchBox } from '../components/SearchBox';
-import { APP_TAGLINE } from '../config';
 import { backend } from '../lib/api';
 import { computeFacets, filterGroups, filtersFromParams, groupResults, hasFilters, paramsFromFilters } from '../lib/filters';
 import { useResults } from '../lib/results';
@@ -44,7 +43,7 @@ export function BrowsePage() {
     ) : (
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
-        <p>No combos yet. Be the first to share one!</p>
+        <p>No combos yet.</p>
         <AddComboButton className="btn btn-filled">
           <Icon name="add" /> Add a combo
         </AddComboButton>
@@ -64,7 +63,6 @@ export function BrowsePage() {
     <>
       <section className="intro">
         <h1 className="page-title">Glaze combinations</h1>
-        <p className="section-supporting">{APP_TAGLINE}.</p>
       </section>
 
       <SearchBox

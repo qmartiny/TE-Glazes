@@ -135,9 +135,6 @@ export function TilesPage() {
     <>
       <section className="intro">
         <h1 className="page-title">Studio test tiles</h1>
-        <p className="section-supporting">
-          The studio fires a tile of every glaze on every clay. See every glaze on one clay, or one glaze on every clay.
-        </p>
       </section>
 
       <div className="tiles-controls">
