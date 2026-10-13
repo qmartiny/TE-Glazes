@@ -10,7 +10,7 @@ interface Props {
    */
   to?: string | (() => string);
   className: string;
-  /** Accessible name, for buttons without visible text (the FAB). */
+  /** Accessible name and tooltip, for buttons without visible text (the FAB in the side rail). */
   label?: string;
   children: ReactNode;
 }
@@ -26,13 +26,13 @@ export function AddComboButton({ to = '/new', className, label, children }: Prop
 
   if (!user || !profile) {
     return (
-      <Link to={typeof to === 'string' ? to : to()} className={className} aria-label={label}>
+      <Link to={typeof to === 'string' ? to : to()} className={className} aria-label={label} title={label}>
         {children}
       </Link>
     );
   }
   return (
-    <label className={`${className} file-trigger`}>
+    <label className={`${className} file-trigger`} title={label}>
       {children}
       <input
         type="file"
