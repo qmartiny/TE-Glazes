@@ -24,7 +24,8 @@ export function GlazePage() {
 
   const key = normName(param);
   // Show the studio's spelling when it's one of theirs.
-  const name = GLAZES.find((g) => normName(g) === key) ?? param;
+  const studioName = GLAZES.find((g) => normName(g) === key);
+  const name = studioName ?? param;
 
   const tiles = useMemo(
     () =>
@@ -68,26 +69,29 @@ export function GlazePage() {
     <article className="glaze-page">
       <header className="intro">
         <h1 className="page-title">{name}</h1>
-        <p className="section-supporting">Glaze</p>
+        <p className="section-supporting">{studioName ? 'Studio glaze' : 'Not a studio glaze'}</p>
       </header>
 
-      <section className="studio-tiles" aria-labelledby="glaze-tiles-h">
-        <div className="section-head">
-          <h2 id="glaze-tiles-h" className="section-title">
-            Studio test tiles
-          </h2>
-          {tiles.length > 0 && (
-            <Link to={`/tiles?${new URLSearchParams({ glaze: name })}`} className="section-link">
-              See all on Test tiles
-            </Link>
+      {/* Only the studio's own glazes get test tiles. */}
+      {(studioName || tiles.length > 0) && (
+        <section className="studio-tiles" aria-labelledby="glaze-tiles-h">
+          <div className="section-head">
+            <h2 id="glaze-tiles-h" className="section-title">
+              Studio test tiles
+            </h2>
+            {tiles.length > 0 && (
+              <Link to={`/tiles?${new URLSearchParams({ glaze: name })}`} className="section-link">
+                See all on Test tiles
+              </Link>
+            )}
+          </div>
+          {tiles.length ? (
+            <TileStrip tiles={tiles} />
+          ) : (
+            results && <p className="section-supporting">The studio hasn’t added a test tile of {name} yet.</p>
           )}
-        </div>
-        {tiles.length ? (
-          <TileStrip tiles={tiles} />
-        ) : (
-          results && <p className="section-supporting">The studio hasn’t added a test tile of {name} yet.</p>
-        )}
-      </section>
+        </section>
+      )}
 
       <section aria-labelledby="glaze-combos-h">
         <div className="section-head">

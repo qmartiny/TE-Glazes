@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { comboKey, layerLabel, normalizeLayers } from './layers';
+import { comboKey, isStudioMaterial, layerLabel, normalizeLayers, usesStudioMaterialsOnly } from './layers';
 
 describe('normalizeLayers', () => {
   it('reads combos saved before slips and oxides as glazes', () => {
@@ -53,5 +53,29 @@ describe('normalizeLayers spelling', () => {
       { type: 'glaze', name: 'Tenmoku', application: null },
       { type: 'glaze', name: 'My  Own', application: null },
     ]);
+  });
+});
+
+describe('studio materials', () => {
+  it("knows the studio's own glazes, slips and oxides, ignoring capitals and spaces", () => {
+    expect(isStudioMaterial({ type: 'glaze', name: 'tenmoku ' })).toBe(true);
+    expect(isStudioMaterial({ type: 'glaze', name: 'Amaco Velvet Red' })).toBe(false);
+    expect(isStudioMaterial({ type: 'slip', name: 'Blue' })).toBe(true);
+    expect(isStudioMaterial({ type: 'glaze', name: 'Blue' })).toBe(false); // a slip, not a glaze
+  });
+
+  it('marks a combo with any custom layer as not studio-only', () => {
+    expect(
+      usesStudioMaterialsOnly([
+        { type: 'slip', name: 'Blue' },
+        { type: 'glaze', name: 'Tenmoku' },
+      ]),
+    ).toBe(true);
+    expect(
+      usesStudioMaterialsOnly([
+        { type: 'glaze', name: 'Tenmoku' },
+        { type: 'glaze', name: 'Mayco Red' },
+      ]),
+    ).toBe(false);
   });
 });

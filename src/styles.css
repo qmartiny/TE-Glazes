@@ -838,6 +838,17 @@ a.card:active::after,
   margin: 8px 0 16px;
 }
 
+/* A button that looks like a link, inside a sentence */
+.link-btn {
+  padding: 0;
+  border: 0;
+  background: none;
+  color: var(--md-primary);
+  font: inherit;
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .result-count {
   color: var(--md-on-surface-variant);
   font-size: 0.875rem;
@@ -937,7 +948,7 @@ a.card:active::after,
     justify-content: space-between;
     gap: 16px;
   }
-  .tiles-controls .tf-select {
+  .tiles-controls .picker {
     flex: 0 1 360px;
   }
   .tiles-controls .segmented {
@@ -1676,6 +1687,25 @@ a.card:active::after,
   transform: translateY(-50%);
   color: var(--md-on-surface-variant);
   pointer-events: none;
+}
+
+/* Searchable dropdown (PickerField) */
+.picker {
+  display: grid;
+  min-width: 0;
+}
+
+.picker-field {
+  position: relative;
+}
+
+.picker input {
+  padding-right: 44px;
+  text-overflow: ellipsis;
+}
+
+.picker-menu {
+  max-height: min(320px, 50vh);
 }
 
 .tf-supporting {

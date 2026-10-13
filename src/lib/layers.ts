@@ -12,6 +12,16 @@ export function layerTypeInfo(type: LayerType) {
 }
 
 /** "Blue" slip reads as "Blue slip"; "Cobalt Oxide" stays as it is. */
+/** Whether a glaze, slip or oxide is one of the studio's own (not a custom one someone typed in). */
+export function isStudioMaterial(layer: Pick<Layer, 'type' | 'name'>): boolean {
+  return layerTypeInfo(layer.type).options.some((o) => normName(o) === normName(layer.name));
+}
+
+/** A combo made only from the studio's glazes, slips and oxides. */
+export function usesStudioMaterialsOnly(layers: Pick<Layer, 'type' | 'name'>[]): boolean {
+  return layers.every(isStudioMaterial);
+}
+
 export function layerLabel(layer: Pick<Layer, 'type' | 'name'>): string {
   if (layer.type === 'glaze' || layer.name.toLowerCase().includes(layer.type)) return layer.name;
   return `${layer.name} ${layer.type}`;
