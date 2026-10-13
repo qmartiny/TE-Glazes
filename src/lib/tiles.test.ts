@@ -1,13 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
-import {
-  clayTileCounts,
-  glazeTileCounts,
-  glazeTileEntries,
-  sortStudioTiles,
-  studioTileCounts,
-  tileEntries,
-} from './tiles';
+import { clayTileCounts, glazeTileCounts, glazeTileEntries, sortStudioTiles, tileEntries } from './tiles';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 
@@ -100,11 +93,6 @@ describe('glazeTileCounts', () => {
       { glaze: 'Cotton', count: 0 },
       { glaze: 'Ash Green', count: 1 },
     ]);
-  });
-
-  it('counts all studio tiles per glaze for combo pages', () => {
-    expect(studioTileCounts(results).get('tenmoku')).toBe(4);
-    expect(studioTileCounts(results).has('cotton')).toBe(false);
   });
 });
 

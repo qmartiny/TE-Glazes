@@ -7,6 +7,7 @@ import { AccountPage } from './pages/AccountPage';
 import { BrowsePage } from './pages/BrowsePage';
 import { ComboFormPage } from './pages/ComboFormPage';
 import { ComboPage } from './pages/ComboPage';
+import { GlazePage } from './pages/GlazePage';
 import { NotFoundPage } from './pages/NotFoundPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
@@ -38,6 +39,7 @@ const router = createHashRouter([
         ),
       },
       { path: 'tiles', element: <TilesPage /> },
+      { path: 'glaze/:name', element: <GlazePage /> },
       { path: 'u/:id', element: <ProfilePage /> },
       {
         path: 'account',
