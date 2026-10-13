@@ -43,7 +43,7 @@ export function BrowsePage() {
     ) : (
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
-        <p>No combos yet. Be the first to share one!</p>
+        <p>No combos yet.</p>
         <AddComboButton className="btn btn-filled">
           <Icon name="add" /> Add a combo
         </AddComboButton>

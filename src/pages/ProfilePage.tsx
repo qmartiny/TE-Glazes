@@ -80,10 +80,7 @@ function ProfileResults({ userId, isMe, name }: { userId: string; isMe: boolean;
     return isMe ? (
       <div className="empty">
         <Icon name="palette" className="empty-icon" />
-        <p>
-          This is your glaze log. Everything you add, shared or private, shows up here, so you can look back at what
-          you’ve tried.
-        </p>
+        <p>Nothing here yet.</p>
         <AddComboButton className="btn btn-filled">
           <Icon name="add" /> Add your first glaze
         </AddComboButton>
