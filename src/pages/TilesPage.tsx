@@ -1,126 +1,241 @@
-import { useEffect, useMemo } from 'react';
+import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AddComboButton } from '../components/AddComboButton';
-import { CardMedia, GridSkeleton, LoadError, comboLink } from '../components/Cards';
+import { CardMedia, GridSkeleton, LoadError } from '../components/Cards';
 import { SelectField } from '../components/Fields';
 import { Icon } from '../components/Icon';
 import { CLAYS, FIRINGS, GLAZES } from '../config';
 import { normalizeClays } from '../lib/clays';
+import { firingLabel, paramsFromFilters } from '../lib/filters';
 import { readPref, writePref } from '../lib/format';
 import { useResults } from '../lib/results';
-import { clayTileCounts, tileEntries, type TileEntry } from '../lib/tiles';
-import type { ClayPart, Firing } from '../types';
+import { clayTileCounts, glazeTileCounts, glazeTileEntries, tileEntries } from '../lib/tiles';
+import type { ClayPart, Firing, ResultSummary } from '../types';
+
+type View = 'clay' | 'glaze';
 
 interface Viewed {
+  by?: View;
   clay?: string;
+  glaze?: string;
   firing?: Firing;
 }
 
-/**
- * Which clay to show when the link doesn't say: the one you looked at last,
- * else the clay you post with, else the clay with the most tiles.
- */
-function defaultClay(counts: { clay: string; count: number }[], viewed: string | undefined): string {
-  const has = (clay: string | undefined) => counts.find((c) => c.clay === clay);
-  if (has(viewed)) return viewed!;
-  const last = readPref<{ clays?: ClayPart[]; clay?: string }>('last');
-  const yours = normalizeClays(last?.clays, last?.clay)[0]?.name;
-  if (has(yours)?.count) return yours!;
-  const most = [...counts].sort((a, b) => b.count - a.count)[0];
-  return most?.count ? most.clay : CLAYS[0];
+interface Count {
+  name: string;
+  count: number;
 }
 
-/** The studio's test tiles: every glaze on one clay, in one kiln. */
+/** The one you looked at last, else the one you post with (clays), else the one with the most tiles. */
+function pick(counts: Count[], viewed: string | undefined, fallback: string, yours?: string): string {
+  const has = (name: string | undefined) => counts.find((c) => c.name === name);
+  if (has(viewed)) return viewed!;
+  if (has(yours)?.count) return yours!;
+  const most = [...counts].sort((a, b) => b.count - a.count)[0];
+  return most?.count ? most.name : fallback;
+}
+
+function yourClay(): string | undefined {
+  const last = readPref<{ clays?: ClayPart[]; clay?: string }>('last');
+  return normalizeClays(last?.clays, last?.clay)[0]?.name;
+}
+
+/**
+ * The studio's test tiles, one kiln at a time: every glaze on one clay, or
+ * one glaze on every clay.
+ */
 export function TilesPage() {
   const [params, setParams] = useSearchParams();
-  // A link says which clay and kiln; otherwise carry on where you left off.
-  const viewed = params.has('clay') ? {} : (readPref<Viewed>('tiles') ?? {});
+  // A link can say what to show; otherwise carry on where you left off.
+  const viewed = readPref<Viewed>('tiles') ?? {};
+  const by: View = params.has('glaze') ? 'glaze' : params.has('clay') ? 'clay' : (viewed.by ?? 'clay');
   const firing: Firing =
     FIRINGS.find((f) => f.value === (params.get('firing') ?? viewed.firing))?.value ?? FIRINGS[0].value;
+
   const { results, error, retry } = useResults();
-  const counts = useMemo(() => (results ? clayTileCounts(results, firing, CLAYS) : null), [results, firing]);
-  const clay = params.get('clay') ?? (counts ? defaultClay(counts, viewed.clay) : CLAYS[0]);
-  const entries = useMemo(() => (results ? tileEntries(results, clay, firing, GLAZES) : null), [results, clay, firing]);
-  const withTile = entries?.filter((e) => e.tile).length ?? 0;
+  const clayCounts = useMemo(
+    () => (results ? clayTileCounts(results, firing, CLAYS).map((c) => ({ name: c.clay, count: c.count })) : null),
+    [results, firing],
+  );
+  const glazeCounts = useMemo(
+    () => (results ? glazeTileCounts(results, firing, GLAZES).map((g) => ({ name: g.glaze, count: g.count })) : null),
+    [results, firing],
+  );
+  const clay = params.get('clay') ?? (clayCounts ? pick(clayCounts, viewed.clay, CLAYS[0], yourClay()) : CLAYS[0]);
+  const glaze = params.get('glaze') ?? (glazeCounts ? pick(glazeCounts, viewed.glaze, GLAZES[0]) : GLAZES[0]);
 
   useEffect(() => {
-    if (counts) writePref('tiles', { clay, firing } satisfies Viewed);
-  }, [counts, clay, firing]);
+    if (results) writePref('tiles', { by, clay, glaze, firing } satisfies Viewed);
+  }, [results, by, clay, glaze, firing]);
 
   // flushSync: apply right away so the controls never show the old choice.
-  const choose = (next: { clay?: string; firing?: Firing }) => {
-    const f = next.firing ?? firing;
+  const choose = (next: Viewed) => {
+    const nextBy = next.by ?? by;
     setParams(
-      { clay: next.clay ?? clay, ...(f === FIRINGS[0].value ? {} : { firing: f }) },
+      {
+        ...(nextBy === 'clay' ? { clay: next.clay ?? clay } : { glaze: next.glaze ?? glaze }),
+        firing: next.firing ?? firing,
+      },
       { replace: true, flushSync: true },
     );
   };
 
   let body;
-  if (error && !entries) body = <LoadError error={error} retry={retry} />;
-  else if (!entries) body = <GridSkeleton />;
-  else
+  if (error && !results) body = <LoadError error={error} retry={retry} />;
+  else if (!results) body = <GridSkeleton />;
+  else if (by === 'clay') {
+    const entries = tileEntries(results, clay, firing, GLAZES);
     body = (
-      <div className="grid">
-        {entries.map((entry) => (
-          <TileCard key={entry.key} entry={entry} clay={clay} firing={firing} />
-        ))}
-      </div>
+      <>
+        <p className="result-count">
+          {entries.filter((e) => e.tile).length} of {entries.length} glazes on {clay}
+        </p>
+        <div className="grid">
+          {entries.map((e) => (
+            <TileCard
+              key={e.key}
+              title={e.glaze}
+              tile={e.tile}
+              add={{ tile: e.glaze, clay, firing }}
+              note={
+                e.others > 0 && (
+                  <Link to={`/tiles?${new URLSearchParams({ glaze: e.glaze, firing })}`}>See it on other clays</Link>
+                )
+              }
+            />
+          ))}
+        </div>
+      </>
     );
+  } else {
+    const entries = glazeTileEntries(results, glaze, firing, CLAYS);
+    const other = FIRINGS.find((f) => f.value !== firing)!;
+    body = (
+      <>
+        <p className="result-count tiles-glaze-count">
+          <span>
+            {glaze} on {entries.filter((e) => e.tile).length} of {entries.length} clays
+          </span>
+          <Link to={`/?${paramsFromFilters({ glaze })}`}>Member combos with {glaze}</Link>
+        </p>
+        <div className="grid">
+          {entries.map((e) => (
+            <TileCard
+              key={e.clay}
+              title={e.clay}
+              tile={e.tile}
+              add={{ tile: glaze, clay: e.clay, firing }}
+              note={e.otherKiln && `${firingLabel(other.value)} tile only`}
+            />
+          ))}
+        </div>
+      </>
+    );
+  }
+
+  const counts = by === 'clay' ? clayCounts : glazeCounts;
+  const current = by === 'clay' ? clay : glaze;
+  const unit = (n: number) =>
+    by === 'clay' ? `${n} ${n === 1 ? 'tile' : 'tiles'}` : `${n} ${n === 1 ? 'clay' : 'clays'}`;
 
   return (
     <>
       <section className="intro">
         <h1 className="page-title">Studio test tiles</h1>
         <p className="section-supporting">
-          The studio fires a tile of every glaze on every clay. Pick a clay and kiln to see them side by side.
+          The studio fires a tile of every glaze on every clay. See every glaze on one clay, or one glaze on every clay.
         </p>
       </section>
 
       <div className="tiles-controls">
-        <SelectField label="Clay" aria-label="Clay" value={clay} onChange={(e) => choose({ clay: e.target.value })}>
-          {(counts ?? [{ clay, count: 0 }]).map((c) => (
-            <option key={c.clay} value={c.clay}>
-              {c.clay} ({c.count ? `${c.count} ${c.count === 1 ? 'tile' : 'tiles'}` : 'no tiles yet'})
+        <Segmented
+          label="Show"
+          name="tiles-by"
+          value={by}
+          options={[
+            { value: 'clay', label: 'By clay' },
+            { value: 'glaze', label: 'By glaze' },
+          ]}
+          onChange={(v) => choose({ by: v })}
+        />
+        <SelectField
+          label={by === 'clay' ? 'Clay' : 'Glaze'}
+          aria-label={by === 'clay' ? 'Clay' : 'Glaze'}
+          value={current}
+          onChange={(e) => choose(by === 'clay' ? { clay: e.target.value } : { glaze: e.target.value })}
+        >
+          {(counts ?? [{ name: current, count: 0 }]).map((c) => (
+            <option key={c.name} value={c.name}>
+              {c.name} ({c.count ? unit(c.count) : 'no tiles yet'})
             </option>
           ))}
         </SelectField>
-        <div className="segmented" role="radiogroup" aria-label="Kiln">
-          {FIRINGS.map((f) => (
-            <label key={f.value} className={`segment${firing === f.value ? ' selected' : ''}`}>
-              <input
-                type="radio"
-                name="tiles-firing"
-                value={f.value}
-                checked={firing === f.value}
-                onChange={() => choose({ firing: f.value })}
-              />
-              {firing === f.value && <Icon name="check" />}
-              {f.label}
-            </label>
-          ))}
-        </div>
+        <Segmented
+          label="Kiln"
+          name="tiles-firing"
+          value={firing}
+          options={FIRINGS}
+          onChange={(v) => choose({ firing: v })}
+        />
       </div>
-      {entries && (
-        <p className="result-count">
-          {withTile} of {entries.length} glazes on {clay}
-        </p>
-      )}
       {body}
     </>
   );
 }
 
-function TileCard({ entry, clay, firing }: { entry: TileEntry; clay: string; firing: Firing }) {
+function Segmented<T extends string>({
+  label,
+  name,
+  value,
+  options,
+  onChange,
+}: {
+  label: string;
+  name: string;
+  value: T;
+  options: readonly { value: T; label: string }[];
+  onChange: (value: T) => void;
+}) {
+  return (
+    <div className="segmented" role="radiogroup" aria-label={label}>
+      {options.map((o) => (
+        <label key={o.value} className={`segment${value === o.value ? ' selected' : ''}`}>
+          <input
+            type="radio"
+            name={name}
+            value={o.value}
+            checked={value === o.value}
+            onChange={() => onChange(o.value)}
+          />
+          {value === o.value && <Icon name="check" />}
+          {o.label}
+        </label>
+      ))}
+    </div>
+  );
+}
+
+/** A studio tile, or a gap: "No tile yet", with Add tile for the studio team. */
+function TileCard({
+  title,
+  tile,
+  add,
+  note,
+}: {
+  title: string;
+  tile: ResultSummary | null;
+  /** What "Add tile" fills in. */
+  add: { tile: string; clay: string; firing: Firing };
+  note: ReactNode;
+}) {
   const { isStudioAdmin } = useAuth();
-  const { tile } = entry;
   if (tile) {
     return (
       <Link to={`/c/${tile.id}`} className="card combo-card">
         <CardMedia photo={tile.photos[0]} badges={null} />
         <div className="card-content">
-          <h2 className="card-title">{entry.glaze}</h2>
+          <h2 className="card-title">{title}</h2>
         </div>
       </Link>
     );
@@ -131,19 +246,10 @@ function TileCard({ entry, clay, firing }: { entry: TileEntry; clay: string; fir
         <div className="card-noimg">No tile yet</div>
       </div>
       <div className="card-content">
-        <h2 className="card-title">{entry.glaze}</h2>
-        {entry.others > 0 && (
-          <p className="card-text">
-            <Link to={comboLink(entry.key)}>
-              See {entry.others} {entry.others === 1 ? 'tile' : 'tiles'} on other clays or kilns
-            </Link>
-          </p>
-        )}
+        <h2 className="card-title">{title}</h2>
+        {note && <p className="card-text">{note}</p>}
         {isStudioAdmin && (
-          <AddComboButton
-            to={`/new?${new URLSearchParams({ tile: entry.glaze, clay, firing })}`}
-            className="btn btn-tonal tile-add"
-          >
+          <AddComboButton to={`/new?${new URLSearchParams(add)}`} className="btn btn-tonal tile-add">
             <Icon name="add_a_photo" /> Add tile
           </AddComboButton>
         )}
