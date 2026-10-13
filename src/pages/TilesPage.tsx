@@ -2,12 +2,12 @@ import { useEffect, useMemo, type ReactNode } from 'react';
 import { Link, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { AddComboButton } from '../components/AddComboButton';
-import { CardMedia, GridSkeleton, LoadError } from '../components/Cards';
+import { CardMedia, GridSkeleton, LoadError, glazeLink } from '../components/Cards';
 import { SelectField } from '../components/Fields';
 import { Icon } from '../components/Icon';
 import { CLAYS, FIRINGS, GLAZES } from '../config';
 import { normalizeClays } from '../lib/clays';
-import { firingLabel, paramsFromFilters } from '../lib/filters';
+import { firingLabel } from '../lib/filters';
 import { readPref, writePref } from '../lib/format';
 import { useResults } from '../lib/results';
 import { clayTileCounts, glazeTileCounts, glazeTileEntries, tileEntries } from '../lib/tiles';
@@ -88,9 +88,6 @@ export function TilesPage() {
     const entries = tileEntries(results, clay, firing, GLAZES);
     body = (
       <>
-        <p className="result-count">
-          {entries.filter((e) => e.tile).length} of {entries.length} glazes on {clay}
-        </p>
         <div className="grid">
           {entries.map((e) => (
             <TileCard
@@ -113,11 +110,8 @@ export function TilesPage() {
     const other = FIRINGS.find((f) => f.value !== firing)!;
     body = (
       <>
-        <p className="result-count tiles-glaze-count">
-          <span>
-            {glaze} on {entries.filter((e) => e.tile).length} of {entries.length} clays
-          </span>
-          <Link to={`/?${paramsFromFilters({ glaze })}`}>Member combos with {glaze}</Link>
+        <p className="tiles-glaze-link">
+          <Link to={glazeLink(glaze)}>Combos with {glaze}</Link>
         </p>
         <div className="grid">
           {entries.map((e) => (
@@ -136,8 +130,6 @@ export function TilesPage() {
 
   const counts = by === 'clay' ? clayCounts : glazeCounts;
   const current = by === 'clay' ? clay : glaze;
-  const unit = (n: number) =>
-    by === 'clay' ? `${n} ${n === 1 ? 'tile' : 'tiles'}` : `${n} ${n === 1 ? 'clay' : 'clays'}`;
 
   return (
     <>
@@ -165,9 +157,9 @@ export function TilesPage() {
           value={current}
           onChange={(e) => choose(by === 'clay' ? { clay: e.target.value } : { glaze: e.target.value })}
         >
-          {(counts ?? [{ name: current, count: 0 }]).map((c) => (
+          {(counts ?? [{ name: current }]).map((c) => (
             <option key={c.name} value={c.name}>
-              {c.name} ({c.count ? unit(c.count) : 'no tiles yet'})
+              {c.name}
             </option>
           ))}
         </SelectField>

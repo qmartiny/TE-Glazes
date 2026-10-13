@@ -10,6 +10,7 @@ export const ICONS = [
   'arrow_drop_down',
   'arrow_upward',
   'check',
+  'chevron_right',
   'close',
   'delete',
   'edit',

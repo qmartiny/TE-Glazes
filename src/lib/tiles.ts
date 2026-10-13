@@ -118,17 +118,6 @@ export function glazeTileCounts(
   });
 }
 
-/** How many studio tiles each glaze has, in any kiln, by normalised glaze name. */
-export function studioTileCounts(results: ResultSummary[]): Map<string, number> {
-  const counts = new Map<string, number>();
-  for (const r of results) {
-    if (!isStudioTile(r)) continue;
-    const k = normName(r.layers[0].name);
-    counts.set(k, (counts.get(k) ?? 0) + 1);
-  }
-  return counts;
-}
-
 /** Studio tiles in the studio's clay order, electric kiln before gas. */
 export function sortStudioTiles<T extends { clays: ClayPart[]; firing: Firing }>(
   tiles: T[],

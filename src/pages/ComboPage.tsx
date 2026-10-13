@@ -1,22 +1,22 @@
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { Link, useNavigate, useParams } from 'react-router';
 import { AddComboButton } from '../components/AddComboButton';
 import { useAuth } from '../auth/AuthContext';
-import { comboLink } from '../components/Cards';
+import { comboLink, glazeLink } from '../components/Cards';
 import { Dialog } from '../components/Dialog';
 import { Icon } from '../components/Icon';
 import { PhotoGallery } from '../components/PhotoGallery';
 import { showSnackbar } from '../components/Snackbar';
+import { TileStrip } from '../components/TileStrip';
 import { CLAYS } from '../config';
 import { backend } from '../lib/api';
-import { clayLabel } from '../lib/clays';
 import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGroup } from '../lib/filters';
 import { formatDate } from '../lib/format';
-import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo, normName } from '../lib/layers';
+import { comboKey, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
-import { sortStudioTiles, studioTileCounts } from '../lib/tiles';
+import { sortStudioTiles } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
-import type { Combo, ComboFilters, Layer, ResultSummary } from '../types';
+import type { Combo, ComboFilters, Layer } from '../types';
 import { NotFoundPage } from './NotFoundPage';
 
 const browseLink = (filters: ComboFilters) => `/?${paramsFromFilters(filters)}`;
@@ -54,7 +54,6 @@ export function ComboPage() {
     return groupResults(results).find((g) => g.key === wanted) ?? null;
   }, [results, key, id]);
 
-  const tileCounts = useMemo(() => (results ? studioTileCounts(results) : new Map<string, number>()), [results]);
   const ids = group?.results.map((r) => r.id) ?? [];
   const full = useAsync(() => (ids.length ? backend.getCombos(ids) : Promise.resolve([])), [ids.join(',')]);
 
@@ -137,29 +136,22 @@ export function ComboPage() {
             {sectionTitle(group.layers)} <span className="section-hint">in the order applied</span>
           </h2>
           <ul className="list">
-            {group.layers.map((layer, i) => {
-              // A glaze opens its studio test tiles (on every clay); slips and oxides open Browse.
-              const tiles = layer.type === 'glaze' ? (tileCounts.get(normName(layer.name)) ?? 0) : 0;
-              const to =
-                layer.type === 'glaze'
-                  ? `/tiles?${new URLSearchParams({ glaze: layer.name })}`
-                  : browseLink({ [layer.type]: layer.name });
-              return (
-                <li key={i}>
-                  <Link to={to} className="list-item">
-                    <span className="list-avatar">{i + 1}</span>
-                    <span className="list-text">
-                      <span className="list-headline">{layer.name}</span>
-                      <span className="list-supporting">
-                        {layerTypeInfo(layer.type).label}
-                        {tiles > 0 && ` · ${tiles} studio test ${tiles === 1 ? 'tile' : 'tiles'}`}
-                      </span>
-                    </span>
-                    {layer.type === 'glaze' && <Icon name="grid_on" className="list-trailing" />}
-                  </Link>
-                </li>
-              );
-            })}
+            {group.layers.map((layer, i) => (
+              <li key={i}>
+                {/* A glaze opens its own page (test tiles and combos); slips and oxides open Browse. */}
+                <Link
+                  to={layer.type === 'glaze' ? glazeLink(layer.name) : browseLink({ [layer.type]: layer.name })}
+                  className="list-item"
+                >
+                  <span className="list-avatar">{i + 1}</span>
+                  <span className="list-text">
+                    <span className="list-headline">{layer.name}</span>
+                    <span className="list-supporting">{layerTypeInfo(layer.type).label}</span>
+                  </span>
+                  <Icon name="chevron_right" className="list-trailing" />
+                </Link>
+              </li>
+            ))}
           </ul>
         </section>
 
@@ -237,37 +229,6 @@ export function ComboPage() {
         )}
       </Dialog>
     </article>
-  );
-}
-
-/** Studio tiles as small thumbnails, labelled with clay and kiln; tap one to open it below. */
-function TileStrip({ tiles, openId }: { tiles: ResultSummary[]; openId: string | undefined }) {
-  const open = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    open.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
-  }, [openId]);
-  return (
-    <div className="tile-strip" role="list">
-      {tiles.map((t) => (
-        <Link
-          key={t.id}
-          ref={t.id === openId ? open : undefined}
-          to={`/c/${t.id}`}
-          replace={openId !== undefined}
-          role="listitem"
-          className={`tile-mini${t.id === openId ? ' selected' : ''}`}
-          aria-current={t.id === openId ? 'true' : undefined}
-        >
-          {t.photos[0] ? (
-            <img src={backend.photoUrl(t.photos[0].thumb)} alt="" loading="lazy" decoding="async" />
-          ) : (
-            <span className="tile-mini-noimg" />
-          )}
-          <span className="tile-mini-clay">{clayLabel(t.clays)}</span>
-          <span className="tile-mini-kiln">{firingLabel(t.firing)}</span>
-        </Link>
-      ))}
-    </div>
   );
 }
 

@@ -934,11 +934,15 @@ a.card:active::after,
   }
 }
 
-.tiles-glaze-count {
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: 4px 16px;
+.tiles-glaze-link {
+  margin: 4px 0 16px;
+}
+
+/* A link at the end of a section heading, e.g. "See all on Test tiles" */
+.section-link {
+  margin-left: auto;
+  font-size: 0.875rem;
+  font-weight: 500;
 }
 
 .card-content {

@@ -8,6 +8,7 @@ import type { Photo, ResultSummary } from '../types';
 import { Icon } from './Icon';
 
 export const comboLink = (key: string) => `/combo/${encodeURIComponent(key)}`;
+export const glazeLink = (name: string) => `/glaze/${encodeURIComponent(name)}`;
 
 export function CardMedia({ photo, badges }: { photo: Photo | undefined; badges: ReactNode }) {
   return (
