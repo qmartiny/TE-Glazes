@@ -60,7 +60,7 @@ select id from auth.users where email = 'someone@example.com';
 
 To remove them: `delete from public.studio_admins where user_id = (select id from auth.users where email = 'someone@example.com');`
 
-The team then gets an **Add tile** button on the Test tiles page for every glaze that doesn't have a tile yet on the chosen clay and kiln (it opens the photo picker, then a form already set to that glaze, clay and kiln), and a **Studio test tile** switch on the add form.
+The team then gets an **Add tile** button on the Test tiles page for every glaze that doesn't have a tile yet on the chosen clay and kiln (it opens the photo picker, then a form already set to that glaze, clay and kiln). That form has a **Studio test tile** switch (already on); it also shows when editing a tile, but not on the team's own posts made with +.
 
 ## Make it yours
 

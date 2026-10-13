@@ -96,7 +96,9 @@ function ComboForm({
   const [description, setDescription] = useState(initial?.description ?? '');
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false);
   const [official, setOfficial] = useState(initial?.official ?? (tile !== null && isStudioAdmin));
-  const canPostTiles = isStudioAdmin || official;
+  // The studio team adds tiles from Test tiles ("Add tile"), so the switch only shows there,
+  // or when editing a tile; their own posts get the same form as everyone else's.
+  const tileForm = (isStudioAdmin && tile !== null) || (initial?.official ?? false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -257,7 +259,7 @@ function ComboForm({
             onChange={(e) => setDescription(e.target.value)}
             supportingText="e.g. Tenmoku dipped 3 sec, Midnight Blue poured over the top. Careful, runny!"
           />
-          {canPostTiles && (
+          {tileForm && (
             <label className="switch-row">
               <span className="switch-text">
                 <span>Studio test tile</span>
