@@ -66,7 +66,7 @@ select id from auth.users where email = 'someone@example.com';
 
 To remove them: `delete from public.studio_admins where user_id = (select id from auth.users where email = 'someone@example.com');`
 
-The team can also **remove anyone's shared post** (spam, or anything that breaks the studio's rules): a **Remove (studio team)** button shows under other people's results. They can't see or change anyone's private posts.
+The team can also **remove anyone's shared post** (spam, or anything that breaks the studio's rules): a **Remove (studio team)** button shows under other people's results. On a post of one glaze on its own, **Move to test tiles** turns it into a studio tile (it stays under the member's name), and **Move to Browse** on a tile turns it back. They can't change anything else in other people's posts, or see their private ones.
 
 On the Test tiles page, the team's + button becomes **Add tile** (set to the clay and kiln being viewed, or the glaze), and every glaze that doesn't have a tile yet on the chosen clay and kiln gets its own **Add tile** button (set to that glaze, clay and kiln). Both open the photo picker, then the form. The team's forms have a **Studio test tile** switch: on when they start from Test tiles, off for posts made with + elsewhere. A tile posted as a normal post by mistake can be turned into one by editing it and switching it on.
 

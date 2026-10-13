@@ -350,6 +350,30 @@ revoke all on public.combinations from anon;
 grant select on public.combinations to authenticated;
 grant insert, update, delete on public.combinations to authenticated;
 
+-- The studio team can move someone's shared post to the studio test tiles
+-- (one glaze on its own), or back, without being able to change anything else.
+create or replace function public.set_studio_tile(post_id uuid, tile boolean)
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if not public.is_studio_admin() then
+    raise exception 'Only the studio team can move posts';
+  end if;
+  update public.combinations c set official = tile
+  where c.id = post_id
+    and not c.is_private
+    and (not tile or (jsonb_array_length(c.layers) = 1 and c.layers -> 0 ->> 'type' = 'glaze'));
+  if not found then
+    raise exception 'Only a shared post of one glaze on its own can be a studio test tile';
+  end if;
+end;
+$$;
+
+revoke execute on function public.set_studio_tile(uuid, boolean) from public, anon;
+grant execute on function public.set_studio_tile(uuid, boolean) to authenticated;
+
 -- ---------------------------------------------------------------------------
 -- Photo storage: public-read bucket, each user writes only to <their id>/...
 -- Files have long random names, which only members can see (in posts), and

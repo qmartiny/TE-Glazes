@@ -1,6 +1,7 @@
 import type { AuthUser, Combo, Profile, ResultSummary } from '../../types';
 import { normalizeClays } from '../clays';
 import { normalizeLayers } from '../layers';
+import { canBeStudioTile } from '../tiles';
 import type { Backend } from './backend';
 import { DEMO_PROFILES, demoCombos } from './demoSeed';
 
@@ -303,6 +304,17 @@ export function createLocalBackend(): Backend {
         // in demo mode) anyone's shared post.
         requireUser(s, c.isPrivate ? c.userId : undefined);
         s.combos = s.combos.filter((x) => x.id !== combo.id);
+      });
+    },
+
+    async setStudioTile(id, tile) {
+      await update((s) => {
+        requireUser(s); // the studio team is everyone in demo mode
+        const c = s.combos.find((x) => x.id === id && !x.isPrivate);
+        if (!c || (tile && !canBeStudioTile(c.layers))) {
+          throw new Error('Only a shared post of one glaze on its own can be a studio test tile');
+        }
+        c.official = tile;
       });
     },
 
