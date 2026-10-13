@@ -111,7 +111,10 @@ export function TilesPage() {
     body = (
       <>
         <p className="tiles-glaze-link">
-          <Link to={glazeLink(glaze)}>Combos with {glaze}</Link>
+          <Link to={glazeLink(glaze)}>
+            Combos with {glaze}
+            <Icon name="chevron_right" />
+          </Link>
         </p>
         <div className="grid">
           {entries.map((e) => (
@@ -137,17 +140,21 @@ export function TilesPage() {
         <h1 className="page-title">Studio test tiles</h1>
       </section>
 
+      <div className="tabs tiles-tabs" role="tablist" aria-label="Show tiles">
+        {(['clay', 'glaze'] as const).map((v) => (
+          <button
+            key={v}
+            type="button"
+            role="tab"
+            aria-selected={by === v}
+            className={`tab${by === v ? ' selected' : ''}`}
+            onClick={() => choose({ by: v })}
+          >
+            {v === 'clay' ? 'By clay' : 'By glaze'}
+          </button>
+        ))}
+      </div>
       <div className="tiles-controls">
-        <Segmented
-          label="Show"
-          name="tiles-by"
-          value={by}
-          options={[
-            { value: 'clay', label: 'By clay' },
-            { value: 'glaze', label: 'By glaze' },
-          ]}
-          onChange={(v) => choose({ by: v })}
-        />
         <SelectField
           label={by === 'clay' ? 'Clay' : 'Glaze'}
           aria-label={by === 'clay' ? 'Clay' : 'Glaze'}

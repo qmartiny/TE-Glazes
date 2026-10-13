@@ -916,26 +916,44 @@ a.card:active::after,
   margin-top: 8px;
 }
 
+/* Test tiles: By clay / By glaze tabs, then the clay or glaze on the left and the kiln on the right */
+.tiles-tabs {
+  margin-bottom: 16px;
+}
+
 .tiles-controls {
   display: grid;
   gap: 12px;
-  max-width: 720px;
-  margin-bottom: 8px;
+  margin-bottom: 16px;
 }
 
 @media (min-width: 600px) {
-  .tiles-controls {
-    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
-    align-items: center;
+  .tabs.tiles-tabs {
+    grid-template-columns: repeat(2, 160px);
   }
-  .tiles-controls > :first-child {
-    grid-column: 1 / -1;
-    max-width: 360px;
+  .tiles-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+  }
+  .tiles-controls .tf-select {
+    flex: 0 1 360px;
+  }
+  .tiles-controls .segmented {
+    flex: 0 0 300px;
   }
 }
 
 .tiles-glaze-link {
-  margin: 4px 0 16px;
+  margin: -4px 0 16px;
+}
+
+.tiles-glaze-link a {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  font-weight: 500;
 }
 
 /* A link at the end of a section heading, e.g. "See all on Test tiles" */
