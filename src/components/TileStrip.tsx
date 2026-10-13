@@ -1,4 +1,3 @@
-import { useEffect, useRef } from 'react';
 import { Link } from 'react-router';
 import { backend } from '../lib/api';
 import { clayLabel } from '../lib/clays';
@@ -6,26 +5,14 @@ import { firingLabel } from '../lib/filters';
 import type { ResultSummary } from '../types';
 
 /**
- * Studio tiles as small thumbnails, labelled with clay and kiln. `openId` is
- * the tile being shown below the strip (if any); tapping another swaps it.
+ * Studio tiles as small thumbnails, labelled with clay and kiln. On a tile's own
+ * page, `replace` swaps tiles in place, so Back still goes to where you came from.
  */
-export function TileStrip({ tiles, openId }: { tiles: ResultSummary[]; openId?: string }) {
-  const open = useRef<HTMLAnchorElement>(null);
-  useEffect(() => {
-    open.current?.scrollIntoView({ block: 'nearest', inline: 'center' });
-  }, [openId]);
+export function TileStrip({ tiles, replace = false }: { tiles: ResultSummary[]; replace?: boolean }) {
   return (
     <div className="tile-strip" role="list">
       {tiles.map((t) => (
-        <Link
-          key={t.id}
-          ref={t.id === openId ? open : undefined}
-          to={`/c/${t.id}`}
-          replace={openId !== undefined}
-          role="listitem"
-          className={`tile-mini${t.id === openId ? ' selected' : ''}`}
-          aria-current={t.id === openId ? 'true' : undefined}
-        >
+        <Link key={t.id} to={`/c/${t.id}`} replace={replace} role="listitem" className="tile-mini">
           {t.photos[0] ? (
             <img src={backend.photoUrl(t.photos[0].thumb)} alt="" loading="lazy" decoding="async" />
           ) : (

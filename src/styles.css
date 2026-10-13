@@ -1217,12 +1217,6 @@ a.card:active::after,
   margin-bottom: 4px;
 }
 
-.tile-mini.selected img,
-.tile-mini.selected .tile-mini-noimg {
-  outline: 3px solid var(--md-primary);
-  outline-offset: -3px;
-}
-
 .tile-mini-clay {
   font-size: 0.8125rem;
   line-height: 1.125rem;
