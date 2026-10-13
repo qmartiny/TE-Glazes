@@ -99,6 +99,8 @@ export interface SignUpInput {
   password: string;
   displayName: string;
   studio: string | null;
+  /** The studio's sign-up code, when one is set. */
+  code?: string;
 }
 
 /** A photo that has been resized in the browser and is ready to upload. */

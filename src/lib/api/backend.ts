@@ -23,6 +23,15 @@ export interface Backend {
   signIn(email: string, password: string): Promise<void>;
   /** Resolves to true when the user must confirm their email before signing in. */
   signUp(input: SignUpInput): Promise<boolean>;
+  /** Whether new accounts need the studio's sign-up code. */
+  signupCodeRequired(): Promise<boolean>;
+  /** Checks a sign-up code before signing up, so the form can say if it's wrong. */
+  checkSignupCode(code: string): Promise<boolean>;
+  /**
+   * Removes the signed-in member's photos, posts, profile and account for good.
+   * Call signOut() afterwards (after leaving pages that need signing in).
+   */
+  deleteAccount(): Promise<void>;
   signOut(): Promise<void>;
   requestPasswordReset(email: string): Promise<void>;
   updatePassword(password: string): Promise<void>;

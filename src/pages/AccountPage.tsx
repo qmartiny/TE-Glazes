@@ -2,11 +2,13 @@ import { useState, type FormEvent } from 'react';
 import { useNavigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
+import { Dialog } from '../components/Dialog';
 import { TextArea, TextField } from '../components/Fields';
 import { Icon } from '../components/Icon';
 import { showSnackbar } from '../components/Snackbar';
 import { STUDIOS } from '../config';
 import { backend } from '../lib/api';
+import { invalidateResults } from '../lib/results';
 import { readTheme, setTheme, THEMES } from '../lib/theme';
 import { errorMessage } from '../lib/useAsync';
 
@@ -109,7 +111,67 @@ export function AccountPage() {
           </button>
         </section>
       )}
+
+      <DeleteAccount />
     </div>
+  );
+}
+
+/** Removes the account with everything in it: profile, posts and photos. */
+function DeleteAccount() {
+  const navigate = useNavigate();
+  const [open, setOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
+  async function onDelete() {
+    setBusy(true);
+    setError(null);
+    try {
+      await backend.deleteAccount();
+      invalidateResults();
+      // Leave Settings before signing out, or it would send you to the sign-in page.
+      navigate('/', { replace: true });
+      await backend.signOut().catch(() => undefined);
+      showSnackbar('Your account has been deleted');
+    } catch (err) {
+      setError(`Couldn't delete your account: ${errorMessage(err)}`);
+      setBusy(false);
+    }
+  }
+
+  return (
+    <section className="account-extra" aria-labelledby="delete-account-h">
+      <h2 id="delete-account-h" className="section-title">
+        Delete account
+      </h2>
+      <p className="section-supporting">Removes your profile, all your posts and their photos for good.</p>
+      <button type="button" className="btn btn-outlined btn-danger" onClick={() => setOpen(true)}>
+        <Icon name="delete" /> Delete my account
+      </button>
+      <Dialog
+        open={open}
+        headline="Delete your account?"
+        onClose={() => !busy && setOpen(false)}
+        actions={
+          <>
+            <button type="button" className="btn btn-text" onClick={() => setOpen(false)} disabled={busy}>
+              Cancel
+            </button>
+            <button type="button" className="btn btn-text btn-danger" onClick={onDelete} disabled={busy}>
+              {busy ? 'Deleting…' : 'Delete account'}
+            </button>
+          </>
+        }
+      >
+        <p>Your profile, all your posts and their photos will be removed for good. This can’t be undone.</p>
+        {error && (
+          <p className="form-error" role="alert">
+            {error}
+          </p>
+        )}
+      </Dialog>
+    </section>
   );
 }
 

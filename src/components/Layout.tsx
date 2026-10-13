@@ -123,7 +123,10 @@ export function Layout() {
 
         <main className="page">{loading ? <div className="spinner" aria-label="Loading" /> : <Outlet />}</main>
 
-        <footer className="footer">A community glaze notebook for studio members. Not an official studio site.</footer>
+        <footer className="footer">
+          A community glaze notebook for studio members. Not an official studio site. ·{' '}
+          <Link to="/privacy">Privacy</Link>
+        </footer>
       </div>
 
       {showFab && <div className="fab-compact">{fab}</div>}

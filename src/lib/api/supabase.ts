@@ -147,14 +147,43 @@ export function createSupabaseBackend(url: string, anonKey: string): Backend {
       fail((await sb.auth.signInWithPassword({ email, password })).error);
     },
 
-    async signUp({ email, password, displayName, studio }) {
+    async signUp({ email, password, displayName, studio, code }) {
       const { data, error } = await sb.auth.signUp({
         email,
         password,
-        options: { data: { display_name: displayName, studio }, emailRedirectTo: siteUrl() },
+        // The database checks the code before creating the account, and doesn't keep it.
+        options: { data: { display_name: displayName, studio, signup_code: code }, emailRedirectTo: siteUrl() },
       });
+      if (error?.message.includes('Database error saving new user')) {
+        throw new Error("Couldn't create the account. Check the sign-up code.");
+      }
       fail(error);
       return !data.session;
+    },
+
+    async signupCodeRequired() {
+      // Not required if schema.sql hasn't been re-run yet (the function isn't there).
+      const { data, error } = await sb.rpc('signup_code_required');
+      return !error && data === true;
+    },
+
+    async checkSignupCode(code) {
+      const { data, error } = await sb.rpc('check_signup_code', { code });
+      return error ? true : data === true; // if unsure, let the sign-up itself decide
+    },
+
+    async deleteAccount() {
+      const { data } = await sb.auth.getSession();
+      const userId = data.session?.user.id;
+      if (!userId) throw new Error('Please sign in first.');
+      // Photos first (the database can't remove stored files), then the account,
+      // which takes the profile and posts with it.
+      for (let round = 0; round < 100; round++) {
+        const files = check(await bucket().list(userId, { limit: 100 })) ?? [];
+        if (!files.length) break;
+        fail((await bucket().remove(files.map((f) => `${userId}/${f.name}`))).error);
+      }
+      fail((await sb.rpc('delete_my_account')).error);
     },
 
     async signOut() {
