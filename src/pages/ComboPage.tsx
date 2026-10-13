@@ -196,9 +196,7 @@ export function ComboPage() {
         {full.error && <p className="form-error">Couldn't load the results: {full.error}</p>}
         {studioTiles.length > 0 && (
           <div className="studio-tiles">
-            <h2 className="section-title">
-              Studio test tiles <span className="section-hint">on each clay, in each kiln</span>
-            </h2>
+            <h2 className="section-title">Studio test tiles</h2>
             <TileStrip tiles={studioTiles} openId={openTile?.id} />
             {openTile && (
               <ResultBlock
