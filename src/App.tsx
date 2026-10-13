@@ -9,6 +9,7 @@ import { ComboFormPage } from './pages/ComboFormPage';
 import { ComboPage } from './pages/ComboPage';
 import { GlazePage } from './pages/GlazePage';
 import { NotFoundPage } from './pages/NotFoundPage';
+import { PrivacyPage } from './pages/PrivacyPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { ResetPasswordPage } from './pages/ResetPasswordPage';
 import { SignInPage } from './pages/SignInPage';
@@ -50,6 +51,7 @@ const router = createHashRouter([
         ),
       },
       { path: 'signin', element: <SignInPage /> },
+      { path: 'privacy', element: <PrivacyPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
       { path: '*', element: <NotFoundPage /> },
     ],

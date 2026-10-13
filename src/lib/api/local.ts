@@ -23,6 +23,8 @@ interface State {
 }
 
 const DB_NAME = 'te-glazes-demo';
+/** Demo mode's sign-up code (shown on the sign-up form). */
+export const DEMO_SIGNUP_CODE = 'clay';
 const STORE = 'kv';
 const KEY = 'state';
 
@@ -155,7 +157,8 @@ export function createLocalBackend(): Backend {
       notify(user);
     },
 
-    async signUp({ email, password, displayName, studio }) {
+    async signUp({ email, password, displayName, studio, code }) {
+      if ((code ?? '').trim().toLowerCase() !== DEMO_SIGNUP_CODE) throw new Error('Wrong sign-up code');
       const user = await update((s) => {
         const normalized = email.trim().toLowerCase();
         if (s.accounts.some((a) => a.email === normalized)) throw new Error('User already registered');
@@ -167,6 +170,24 @@ export function createLocalBackend(): Backend {
       });
       notify(user);
       return false;
+    },
+
+    async signupCodeRequired() {
+      return true;
+    },
+
+    async checkSignupCode(code) {
+      return code.trim().toLowerCase() === DEMO_SIGNUP_CODE;
+    },
+
+    async deleteAccount() {
+      await update((s) => {
+        requireUser(s);
+        const id = s.sessionUserId;
+        s.combos = s.combos.filter((c) => c.userId !== id);
+        s.profiles = s.profiles.filter((p) => p.id !== id);
+        s.accounts = s.accounts.filter((a) => a.id !== id);
+      });
     },
 
     async signOut() {
@@ -278,7 +299,9 @@ export function createLocalBackend(): Backend {
       await update((s) => {
         const c = s.combos.find((x) => x.id === combo.id);
         if (!c) return;
-        requireUser(s, c.userId);
+        // Like the real database: your own posts, or (studio team, which is everyone
+        // in demo mode) anyone's shared post.
+        requireUser(s, c.isPrivate ? c.userId : undefined);
         s.combos = s.combos.filter((x) => x.id !== combo.id);
       });
     },

@@ -37,6 +37,66 @@ create policy "Users can update their own profile"
 grant select on public.profiles to anon, authenticated;
 grant insert, update on public.profiles to authenticated;
 
+-- ---------------------------------------------------------------------------
+-- Sign-up code: when one is set, new accounts need it (share it at the
+-- studio). Set or change it in the SQL editor, not in this file (it's public):
+--   update public.studio_settings set signup_code = 'your-code-here';
+-- Set it back to null to let anyone sign up. Capitals don't matter.
+-- ---------------------------------------------------------------------------
+create table if not exists public.studio_settings (
+  id int primary key default 1 check (id = 1),
+  signup_code text
+);
+insert into public.studio_settings (id) values (1) on conflict (id) do nothing;
+
+-- No policies or grants: the code can't be read through the API, only checked.
+alter table public.studio_settings enable row level security;
+revoke all on public.studio_settings from anon, authenticated;
+
+create or replace function public.signup_code_required()
+returns boolean
+language sql stable
+security definer set search_path = ''
+as $$
+  select coalesce(trim(signup_code), '') <> '' from public.studio_settings where id = 1;
+$$;
+
+create or replace function public.check_signup_code(code text)
+returns boolean
+language sql stable
+security definer set search_path = ''
+as $$
+  select coalesce(trim(s.signup_code), '') = '' or lower(trim(coalesce(code, ''))) = lower(trim(s.signup_code))
+  from public.studio_settings s
+  where s.id = 1;
+$$;
+
+grant execute on function public.signup_code_required() to anon, authenticated;
+grant execute on function public.check_signup_code(text) to anon, authenticated;
+
+-- Runs before every new account, however it's created through the API.
+create or replace function public.check_new_user_code()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if not public.check_signup_code(new.raw_user_meta_data ->> 'signup_code') then
+    raise exception 'Wrong sign-up code' using errcode = 'P0001';
+  end if;
+  -- Don't keep the code on the account.
+  new.raw_user_meta_data = coalesce(new.raw_user_meta_data, '{}'::jsonb) - 'signup_code';
+  return new;
+end;
+$$;
+
+revoke execute on function public.check_new_user_code() from public, anon, authenticated;
+
+drop trigger if exists check_signup_code on auth.users;
+create trigger check_signup_code
+  before insert on auth.users
+  for each row execute procedure public.check_new_user_code();
+
 -- Create the profile automatically from the name/studio given at sign-up.
 create or replace function public.handle_new_user()
 returns trigger
@@ -83,6 +143,32 @@ create policy "The studio team is visible to everyone"
   using (true);
 
 grant select on public.studio_admins to anon, authenticated;
+
+create or replace function public.is_studio_admin()
+returns boolean
+language sql stable
+security definer set search_path = ''
+as $$
+  select exists (select 1 from public.studio_admins a where a.user_id = (select auth.uid()));
+$$;
+
+-- Delete your own account (from Settings). Your profile, posts and studio
+-- team membership go with it; the app removes your photos first.
+create or replace function public.delete_my_account()
+returns void
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if auth.uid() is null then
+    raise exception 'Not signed in';
+  end if;
+  delete from auth.users where id = auth.uid();
+end;
+$$;
+
+revoke execute on function public.delete_my_account() from public, anon;
+grant execute on function public.delete_my_account() to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Combinations: a glaze combo with photos, clay, firing and notes
@@ -142,6 +228,35 @@ drop trigger if exists combinations_set_timestamps on public.combinations;
 create trigger combinations_set_timestamps
   before insert or update on public.combinations
   for each row execute procedure public.set_timestamps();
+
+-- At most 20 new posts a day each, to limit spam (the studio team has no limit,
+-- for adding test tiles).
+create or replace function public.limit_daily_posts()
+returns trigger
+language plpgsql
+security definer set search_path = ''
+as $$
+begin
+  if public.is_studio_admin() then
+    return new;
+  end if;
+  if (
+    select count(*) from public.combinations c
+    where c.user_id = new.user_id and c.created_at > now() - interval '1 day'
+  ) >= 20 then
+    raise exception 'You’ve added 20 posts in the last day, the most allowed. Try again tomorrow.'
+      using errcode = 'P0001';
+  end if;
+  return new;
+end;
+$$;
+
+revoke execute on function public.limit_daily_posts() from public, anon, authenticated;
+
+drop trigger if exists combinations_daily_limit on public.combinations;
+create trigger combinations_daily_limit
+  before insert on public.combinations
+  for each row execute procedure public.limit_daily_posts();
 
 -- Slips & oxides: layers used to be {"glaze": "...", "application": ...}.
 -- Convert any combos saved that way, then only accept the new format.
@@ -206,7 +321,7 @@ create policy "Users can add their own combos"
   on public.combinations for insert to authenticated
   with check (
     user_id = (select auth.uid())
-    and (not official or exists (select 1 from public.studio_admins a where a.user_id = (select auth.uid())))
+    and (not official or (select public.is_studio_admin()))
   );
 
 drop policy if exists "Users can edit their own combos" on public.combinations;
@@ -215,13 +330,15 @@ create policy "Users can edit their own combos"
   using (user_id = (select auth.uid()))
   with check (
     user_id = (select auth.uid())
-    and (not official or exists (select 1 from public.studio_admins a where a.user_id = (select auth.uid())))
+    and (not official or (select public.is_studio_admin()))
   );
 
+-- People delete their own; the studio team can also remove any shared post (moderation).
 drop policy if exists "Users can delete their own combos" on public.combinations;
-create policy "Users can delete their own combos"
+drop policy if exists "Users delete their own combos; the studio team any shared one" on public.combinations;
+create policy "Users delete their own combos; the studio team any shared one"
   on public.combinations for delete to authenticated
-  using (user_id = (select auth.uid()));
+  using (user_id = (select auth.uid()) or (not is_private and (select public.is_studio_admin())));
 
 grant select on public.combinations to anon, authenticated;
 grant insert, update, delete on public.combinations to authenticated;
@@ -236,18 +353,42 @@ on conflict (id) do update
       file_size_limit = excluded.file_size_limit,
       allowed_mime_types = excluded.allowed_mime_types;
 
+-- Files uploaded to your folder in the last day (each photo is two: full size and thumbnail).
+create or replace function public.photos_uploaded_today()
+returns bigint
+language sql stable
+security definer set search_path = ''
+as $$
+  select count(*) from storage.objects o
+  where o.bucket_id = 'photos'
+    and (storage.foldername(o.name))[1] = (select auth.uid()::text)
+    and o.created_at > now() - interval '1 day';
+$$;
+
+-- At most 300 files a day each (20 posts × 6 photos × 2 is 240); none for the studio team.
 drop policy if exists "photos: users upload to their own folder" on storage.objects;
 create policy "photos: users upload to their own folder"
   on storage.objects for insert to authenticated
-  with check (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid()::text));
+  with check (
+    bucket_id = 'photos'
+    and (storage.foldername(name))[1] = (select auth.uid()::text)
+    and ((select public.is_studio_admin()) or (select public.photos_uploaded_today()) < 300)
+  );
 
 -- Deleting through the API needs select as well as delete.
+-- The studio team can also remove anyone's photos, when removing a post.
 drop policy if exists "photos: users see their own files" on storage.objects;
 create policy "photos: users see their own files"
   on storage.objects for select to authenticated
-  using (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid()::text));
+  using (
+    bucket_id = 'photos'
+    and ((storage.foldername(name))[1] = (select auth.uid()::text) or (select public.is_studio_admin()))
+  );
 
 drop policy if exists "photos: users delete their own files" on storage.objects;
 create policy "photos: users delete their own files"
   on storage.objects for delete to authenticated
-  using (bucket_id = 'photos' and (storage.foldername(name))[1] = (select auth.uid()::text));
+  using (
+    bucket_id = 'photos'
+    and ((storage.foldername(name))[1] = (select auth.uid()::text) or (select public.is_studio_admin()))
+  );

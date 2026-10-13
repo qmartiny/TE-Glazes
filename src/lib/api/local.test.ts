@@ -34,7 +34,13 @@ describe('demo backend', () => {
 
     const seen: (string | null)[] = [];
     backend.onAuthChange((u) => seen.push(u?.email ?? null));
-    await backend.signUp({ email: 'Me@Example.com', password: 'secret1', displayName: 'Me', studio: 'Hoxton' });
+    await backend.signUp({
+      email: 'Me@Example.com',
+      password: 'secret1',
+      displayName: 'Me',
+      studio: 'Hoxton',
+      code: 'clay',
+    });
     const user = await backend.getUser();
     expect(user?.email).toBe('me@example.com');
     expect(seen).toEqual(['me@example.com']);
@@ -60,7 +66,7 @@ describe('demo backend', () => {
 
   it('hides private combos from everyone else', async () => {
     const backend = createLocalBackend();
-    await backend.signUp({ email: 'a@x.com', password: 'secret1', displayName: 'A', studio: null });
+    await backend.signUp({ email: 'a@x.com', password: 'secret1', displayName: 'A', studio: null, code: 'clay' });
     const a = (await backend.getUser())!;
     const secret = await backend.createCombo(a.id, { ...input, isPrivate: true });
     expect(await backend.getCombo(secret.id)).not.toBeNull();
@@ -70,7 +76,7 @@ describe('demo backend', () => {
     expect((await backend.listResults()).some((r) => r.userId === a.id)).toBe(false);
     expect(await backend.getCombos([secret.id])).toEqual([]);
 
-    await backend.signUp({ email: 'b@x.com', password: 'secret1', displayName: 'B', studio: null });
+    await backend.signUp({ email: 'b@x.com', password: 'secret1', displayName: 'B', studio: null, code: 'clay' });
     expect(await backend.getCombo(secret.id)).toBeNull();
     await expect(backend.deleteCombo(secret)).rejects.toThrow(/your own/);
     await backend.signOut();
@@ -80,8 +86,35 @@ describe('demo backend', () => {
 
   it('rejects a wrong password', async () => {
     const backend = createLocalBackend();
-    await backend.signUp({ email: 'a@x.com', password: 'secret1', displayName: 'A', studio: null });
+    await backend.signUp({ email: 'a@x.com', password: 'secret1', displayName: 'A', studio: null, code: 'clay' });
     await backend.signOut();
     await expect(backend.signIn('a@x.com', 'nope')).rejects.toThrow(/invalid/i);
+  });
+
+  it('needs the sign-up code', async () => {
+    const backend = createLocalBackend();
+    expect(await backend.signupCodeRequired()).toBe(true);
+    expect(await backend.checkSignupCode(' Clay ')).toBe(true);
+    expect(await backend.checkSignupCode('mud')).toBe(false);
+    await expect(
+      backend.signUp({ email: 'x@x.com', password: 'secret1', displayName: 'X', studio: null, code: 'mud' }),
+    ).rejects.toThrow(/sign-up code/);
+    expect(await backend.getUser()).toBeNull();
+  });
+
+  it('deletes an account with its posts', async () => {
+    const backend = createLocalBackend();
+    await backend.signUp({ email: 'gone@x.com', password: 'secret1', displayName: 'Gone', studio: null, code: 'clay' });
+    const me = (await backend.getUser())!;
+    await backend.createCombo(me.id, input);
+    const others = (await backend.listResults()).filter((r) => r.userId !== me.id).length;
+    await backend.deleteAccount();
+    await backend.signOut();
+    expect(await backend.getUser()).toBeNull();
+    expect(await backend.getProfile(me.id)).toBeNull();
+    const left = await backend.listResults();
+    expect(left.some((r) => r.userId === me.id)).toBe(false);
+    expect(left).toHaveLength(others);
+    await expect(backend.signIn('gone@x.com', 'secret1')).rejects.toThrow();
   });
 });

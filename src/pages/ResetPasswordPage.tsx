@@ -49,9 +49,9 @@ export function ResetPasswordPage() {
           type="password"
           value={password}
           required
-          minLength={6}
+          minLength={8}
           autoComplete="new-password"
-          supportingText="At least 6 characters"
+          supportingText="At least 8 characters"
           onChange={(e) => setPassword(e.target.value)}
         />
         {error && (

@@ -337,6 +337,24 @@ a.card:active::after,
   padding: 8px var(--gutter) 32px;
 }
 
+/* Plain text pages (Privacy) */
+.prose {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+}
+
+.prose h2 {
+  margin-top: 16px;
+}
+
+.prose ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding-left: 20px;
+}
+
 .footer {
   color: var(--md-on-surface-variant);
   font-size: 0.75rem;

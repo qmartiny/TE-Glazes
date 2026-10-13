@@ -31,10 +31,16 @@ About 15 minutes, all free.
 1. Sign up at [supabase.com](https://supabase.com) and create a new project (choose the London region).
 2. Open **SQL Editor**, paste in the whole of [`supabase/schema.sql`](supabase/schema.sql), and press **Run**. This creates the tables, the photo storage bucket and the access rules. It's safe to run again later.
 3. Go to **Authentication → Sign In / Providers → Email**:
-   - The simplest option is to switch **Confirm email** off. People can then sign up and start posting straight away.
+   - The simplest option is to switch **Confirm email** off. People can then sign up and start posting straight away (the sign-up code below keeps it to studio members).
+   - Set the **minimum password length** to 8, to match the sign-up form.
    - If you want email confirmation or **password-reset emails**, set up custom SMTP under **Authentication → Emails** (for example with [Resend](https://resend.com)'s free tier). Supabase's built-in email sender is only meant for testing and won't reliably reach your members.
 4. Go to **Authentication → URL Configuration**. Set **Site URL** to your site's address (step 3 below) and add `https://YOUR-SITE-ADDRESS/**` under **Redirect URLs**.
-5. Under **Project Settings → API Keys**, copy the **Project URL** and the **anon / publishable key** (never the secret / service_role key). The anon key is meant to be public; the access rules in the database protect the data.
+5. **Set a sign-up code**, so only people from the studio can make an account. In the **SQL Editor**, run this with a code of your choice (something not easy to guess; capitals don't matter), then share it at the studio:
+   ```sql
+   update public.studio_settings set signup_code = 'your-code-here';
+   ```
+   Run it again with a new code to change it (existing members aren't affected), or with `null` to let anyone sign up. The code isn't in this repo, and it can't be read through the site. Note that accounts added from the Supabase dashboard also need it, so share the code rather than adding people there.
+6. Under **Project Settings → API Keys**, copy the **Project URL** and the **anon / publishable key** (never the secret / service_role key). The anon key is meant to be public; the access rules in the database protect the data.
 
 ### 2. Connect the site to it
 
@@ -60,7 +66,9 @@ select id from auth.users where email = 'someone@example.com';
 
 To remove them: `delete from public.studio_admins where user_id = (select id from auth.users where email = 'someone@example.com');`
 
-The team then gets an **Add tile** button on the Test tiles page for every glaze that doesn't have a tile yet on the chosen clay and kiln (it opens the photo picker, then a form already set to that glaze, clay and kiln), and a **Studio test tile** switch on the add form.
+The team can also **remove anyone's shared post** (spam, or anything that breaks the studio's rules): a **Remove (studio team)** button shows under other people's results. They can't see or change anyone's private posts.
+
+The team then gets an **Add tile** button on the Test tiles page for every glaze that doesn't have a tile yet on the chosen clay and kiln (it opens the photo picker, then a form already set to that glaze, clay and kiln). That form has a **Studio test tile** switch (already on); it also shows when editing a tile, but not on the team's own posts made with +.
 
 ## Make it yours
 
@@ -77,6 +85,8 @@ These lists fill the pickers and filters, in alphabetical order. People can also
 - **Free tier**: Supabase's free plan includes 1 GB of file storage (thousands of resized photos) and 500 MB of database. Free projects are paused after a week with no activity; you can resume one from the Supabase dashboard.
 - **Grouping happens in the browser.** The site loads a short summary of every post (including notes, for search) to group, filter and search them, which is quick for a studio's worth of posts, even thousands. Typed-in names group when they match ignoring capitals and spaces, and a typed name that matches a studio one becomes the studio's spelling.
 - **Updating**: when an update changes the database (the pull request will say so), run [`supabase/schema.sql`](supabase/schema.sql) again in the SQL Editor *before* merging. It keeps existing posts and fills in anything new.
+- **Limits**: each member can add up to 20 posts and upload up to 300 photo files (each photo is two: full size and thumbnail) in any 24 hours, to stop spam filling the free storage. The studio team has no limit.
+- **Privacy**: the site has a short **Privacy** page (linked in the footer) saying what's stored, who sees it and how to delete it. Members can **delete their account** in Settings, which removes their profile, posts and photos. Photos are re-encoded in the browser before upload, which strips their location and camera details.
 - **Private results** are hidden from everyone else in the app. Their photo files sit in a public bucket under long random names, so they can't be found by browsing, but anyone given the exact image link could open it.
 - **Members only?** To require sign-in just to browse, change the two `select` policies in `schema.sql` (on `profiles` and `combinations`) to `to authenticated`, then re-run it.
 - **Password reset links** must be opened on the same device and browser that requested them.

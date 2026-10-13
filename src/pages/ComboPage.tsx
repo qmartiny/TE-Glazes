@@ -36,7 +36,7 @@ function sectionTitle(layers: Layer[]) {
  */
 export function ComboPage() {
   const { id, key } = useParams();
-  const { user } = useAuth();
+  const { user, isStudioAdmin } = useAuth();
   const navigate = useNavigate();
   const { results, error, retry } = useResults();
   const [deleting, setDeleting] = useState<Combo | null>(null);
@@ -101,6 +101,10 @@ export function ComboPage() {
     }
   }
 
+  // Your own result, or (for the studio team) removing someone else's shared post.
+  const mine = deleting?.userId === user?.id;
+  const canRemove = (c: Combo) => isStudioAdmin && c.userId !== user?.id && !c.isPrivate;
+
   async function onDelete() {
     if (!deleting || !group) return;
     setBusy(true);
@@ -109,12 +113,12 @@ export function ComboPage() {
       await backend.deleteCombo(deleting);
       invalidateResults();
       setDeleting(null);
-      showSnackbar('Result deleted');
+      showSnackbar(mine ? 'Result deleted' : 'Post removed');
       if (group.results.length > 1) {
         navigate(comboLink(group.key), { replace: true });
         retry();
       } else {
-        navigate(`/u/${deleting.userId}`, { replace: true });
+        navigate(mine ? `/u/${deleting.userId}` : '/', { replace: true });
       }
     } catch (err) {
       setDeleteError(`Couldn't delete: ${errorMessage(err)}`);
@@ -183,6 +187,7 @@ export function ComboPage() {
                 combo={openTile}
                 highlighted={false}
                 isOwner={user?.id === openTile.userId}
+                canRemove={canRemove(openTile)}
                 onDelete={() => setDeleting(openTile)}
               />
             )}
@@ -201,6 +206,7 @@ export function ComboPage() {
             combo={combo}
             highlighted={combo.id === id && memberResults.length > 1}
             isOwner={user?.id === combo.userId}
+            canRemove={canRemove(combo)}
             onDelete={() => setDeleting(combo)}
           />
         ))}
@@ -208,7 +214,7 @@ export function ComboPage() {
 
       <Dialog
         open={deleting !== null}
-        headline="Delete your result?"
+        headline={mine ? 'Delete your result?' : `Remove ${deleting?.author?.displayName ?? 'this member'}’s post?`}
         onClose={() => !busy && setDeleting(null)}
         actions={
           <>
@@ -216,13 +222,13 @@ export function ComboPage() {
               Cancel
             </button>
             <button type="button" className="btn btn-text btn-danger" onClick={onDelete} disabled={busy}>
-              {busy ? 'Deleting…' : 'Delete'}
+              {busy ? 'Deleting…' : mine ? 'Delete' : 'Remove'}
             </button>
           </>
         }
       >
         <p>
-          Your photos and notes will be removed for good.
+          {mine ? 'Your' : 'Their'} photos and notes will be removed for good.
           {group.results.length > 1 && ' Other members’ results for this combo stay.'}
         </p>
         {deleteError && (
@@ -239,11 +245,14 @@ function ResultBlock({
   combo,
   highlighted,
   isOwner,
+  canRemove,
   onDelete,
 }: {
   combo: Combo;
   highlighted: boolean;
   isOwner: boolean;
+  /** The studio team can remove other people's shared posts. */
+  canRemove: boolean;
   onDelete: () => void;
 }) {
   const applied = combo.layers.filter((l) => l.application);
@@ -302,6 +311,13 @@ function ResultBlock({
             </Link>
             <button type="button" className="btn btn-text btn-danger" onClick={onDelete}>
               <Icon name="delete" /> Delete
+            </button>
+          </div>
+        )}
+        {canRemove && (
+          <div className="actions">
+            <button type="button" className="btn btn-text btn-danger" onClick={onDelete}>
+              <Icon name="delete" /> Remove (studio team)
             </button>
           </div>
         )}

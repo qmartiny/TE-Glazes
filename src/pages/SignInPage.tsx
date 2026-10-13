@@ -1,11 +1,12 @@
 import { useState, type FormEvent } from 'react';
-import { Navigate, useSearchParams } from 'react-router';
+import { Link, Navigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
 import { TextField } from '../components/Fields';
 import { APP_NAME, STUDIOS } from '../config';
 import { backend } from '../lib/api';
-import { errorMessage } from '../lib/useAsync';
+import { DEMO_SIGNUP_CODE } from '../lib/api/local';
+import { errorMessage, useAsync } from '../lib/useAsync';
 
 type Mode = 'signin' | 'signup' | 'reset';
 
@@ -23,6 +24,9 @@ export function SignInPage() {
   const [password, setPassword] = useState('');
   const [displayName, setDisplayName] = useState('');
   const [studio, setStudio] = useState('');
+  const [code, setCode] = useState('');
+  // Whether the studio has set a sign-up code (it's checked again when the account is created).
+  const codeRequired = useAsync(() => backend.signupCodeRequired(), []);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [info, setInfo] = useState<string | null>(null);
@@ -44,11 +48,16 @@ export function SignInPage() {
       if (mode === 'signin') {
         await backend.signIn(email.trim(), password);
       } else if (mode === 'signup') {
+        if (codeRequired.data && !(await backend.checkSignupCode(code))) {
+          setError('That sign-up code isn’t right. Ask at the studio for the current one.');
+          return;
+        }
         const needsConfirm = await backend.signUp({
           email: email.trim(),
           password,
           displayName: displayName.trim(),
           studio: studio.trim() || null,
+          code: code.trim() || undefined,
         });
         if (needsConfirm) {
           setInfo('Almost there — check your email for a confirmation link, then come back and sign in.');
@@ -121,6 +130,20 @@ export function SignInPage() {
                 placeholder="Not specified"
                 otherLabel="Studio name"
               />
+              {codeRequired.data && (
+                <TextField
+                  label="Studio sign-up code"
+                  value={code}
+                  required
+                  autoComplete="off"
+                  autoCapitalize="none"
+                  spellCheck={false}
+                  supportingText={
+                    backend.mode === 'demo' ? `Demo mode: the code is “${DEMO_SIGNUP_CODE}”` : 'Ask at the studio'
+                  }
+                  onChange={(e) => setCode(e.target.value)}
+                />
+              )}
             </>
           )}
           <TextField
@@ -138,9 +161,9 @@ export function SignInPage() {
               type="password"
               value={password}
               required
-              minLength={6}
+              minLength={mode === 'signup' ? 8 : undefined}
               autoComplete={mode === 'signup' ? 'new-password' : 'current-password'}
-              supportingText={mode === 'signup' ? 'At least 6 characters' : undefined}
+              supportingText={mode === 'signup' ? 'At least 8 characters' : undefined}
               onChange={(e) => setPassword(e.target.value)}
             />
           )}
@@ -166,7 +189,9 @@ export function SignInPage() {
             Back to sign in
           </button>
         )}
-        <p className="section-supporting center">Anyone can browse. You need an account to add combos.</p>
+        <p className="section-supporting center">
+          Anyone can browse. You need an account to add combos. <Link to="/privacy">Privacy</Link>
+        </p>
         {backend.mode === 'demo' && (
           <p className="section-supporting center">
             Demo mode: use any email and password. The account only exists in this browser.
