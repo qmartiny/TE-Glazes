@@ -6,12 +6,12 @@
     <title>Glaze Book</title>
     <meta name="description" content="Share and find glaze combinations from the studio community." />
     <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#151311" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: dark)" />
     <script>
-      // Apply a saved Light/Dark choice before the first paint (see src/lib/theme.ts).
+      // Light unless Dark or Auto was chosen: apply it before the first paint (see src/lib/theme.ts).
       try {
         var theme = JSON.parse(localStorage.getItem('te-glazes:theme'));
-        if (theme === 'light' || theme === 'dark') document.documentElement.dataset.theme = theme;
+        if (theme === 'dark' || theme === 'auto') document.documentElement.dataset.theme = theme;
       } catch (e) {}
     </script>
     <link rel="icon" href="./favicon.svg" type="image/svg+xml" />

@@ -54,8 +54,9 @@
   --tf-bg: var(--md-surface);
 }
 
+/* Light by default; dark when chosen in Settings, or with Auto on a device set to dark. */
 @media (prefers-color-scheme: dark) {
-  :root:not([data-theme='light']) {
+  :root[data-theme='auto'] {
     --md-primary: #e1c0ab;
     --md-on-primary: #402c1d;
     --md-primary-container: #664e3d;

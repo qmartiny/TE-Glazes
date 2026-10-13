@@ -11,22 +11,24 @@ describe('theme', () => {
     vi.unstubAllGlobals();
   });
 
-  it('reads a saved light or dark choice', () => {
+  it('reads a saved choice', () => {
     stubStorage(() => '"dark"');
     expect(readTheme()).toBe('dark');
+    stubStorage(() => '"auto"');
+    expect(readTheme()).toBe('auto');
     stubStorage(() => '"light"');
     expect(readTheme()).toBe('light');
   });
 
-  it('falls back to auto when nothing valid is saved or storage is blocked', () => {
+  it('is light when nothing valid is saved or storage is blocked', () => {
     stubStorage(() => null);
-    expect(readTheme()).toBe('auto');
+    expect(readTheme()).toBe('light');
     stubStorage(() => '"purple"');
-    expect(readTheme()).toBe('auto');
+    expect(readTheme()).toBe('light');
     stubStorage(() => {
       throw new Error('blocked');
     });
-    expect(readTheme()).toBe('auto');
+    expect(readTheme()).toBe('light');
   });
 
   it('is applied by index.html before the first paint, from the same storage key', () => {
