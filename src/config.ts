@@ -5,7 +5,6 @@
 // ---------------------------------------------------------------------------
 
 export const APP_NAME = 'Glaze Book';
-export const APP_TAGLINE = 'What the studio glazes look like together, shared by members';
 
 // Your Supabase project (Project Settings → API Keys). The publishable / anon
 // key is meant to be public: the database's access rules protect the data.
