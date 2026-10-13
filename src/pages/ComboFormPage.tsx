@@ -29,7 +29,7 @@ export function ComboFormPage() {
   const { user } = useAuth();
   const existing = useAsync(() => (id ? backend.getCombo(id) : Promise.resolve(null)), [id]);
   // "Add your result" on a combo page passes ?like=<post> to start with the same layers;
-  // "Add tile" on the Test tiles page passes ?tile=<glaze>&clay=<clay>&firing=<kiln>.
+  // "Add tile" on the Test tiles page passes ?tile=<glaze>&clay=<clay>&firing=<kiln> (the glaze may be blank).
   const like = id ? null : params.get('like');
   const tile = id || like ? null : params.get('tile');
   const tileFiring = FIRINGS.find((f) => f.value === params.get('firing'))?.value;
@@ -50,7 +50,7 @@ export function ComboFormPage() {
       key={id ?? `new-${like ?? ''}-${tile ?? ''}`}
       initial={id ? (existing.data ?? null) : null}
       template={like ? (template.data ?? null) : null}
-      tile={tile ? { glaze: tile, clay: tileClay, firing: tileFiring } : null}
+      tile={tile !== null ? { glaze: tile, clay: tileClay || undefined, firing: tileFiring } : null}
     />
   );
 }
@@ -96,9 +96,8 @@ function ComboForm({
   const [description, setDescription] = useState(initial?.description ?? '');
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false);
   const [official, setOfficial] = useState(initial?.official ?? (tile !== null && isStudioAdmin));
-  // The studio team adds tiles from Test tiles ("Add tile"), so the switch only shows there,
-  // or when editing a tile; their own posts get the same form as everyone else's.
-  const tileForm = (isStudioAdmin && tile !== null) || (initial?.official ?? false);
+  // Only the studio team can post tiles. It's on when they come from Test tiles.
+  const tileForm = isStudioAdmin || (initial?.official ?? false);
   const [status, setStatus] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
 
@@ -164,11 +163,11 @@ function ComboForm({
       }
       if (!input.official) writePref('last', { clays: input.clays } satisfies LastUsed);
       invalidateResults();
-      if (tile && input.official && !initial) {
+      if (input.official && !initial) {
         // Back to the tiles, ready for the next one.
         showSnackbar(`${input.layers[0].name} tile added`);
         const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
-        if (idx > 0) navigate(-1);
+        if (tile && idx > 0) navigate(-1);
         else
           navigate(`/tiles?${new URLSearchParams({ clay: input.clays[0].name, firing: input.firing })}`, {
             replace: true,
@@ -219,7 +218,7 @@ function ComboForm({
             comes before it.
           </p>
           <LayerEditor layers={layers} onChange={setLayers} />
-          {sameCombo.length > 0 && (
+          {!official && sameCombo.length > 0 && (
             <p className="info-banner" role="status">
               <Icon name="photo_library" />
               <span>

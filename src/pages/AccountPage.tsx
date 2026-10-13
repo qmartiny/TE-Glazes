@@ -48,8 +48,9 @@ export function AccountPage() {
   }
 
   async function onSignOut() {
-    await backend.signOut();
+    // Leave this page first, so signing in again doesn't come back to it.
     navigate('/', { replace: true });
+    await backend.signOut();
   }
 
   return (

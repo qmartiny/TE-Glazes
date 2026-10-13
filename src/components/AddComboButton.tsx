@@ -4,8 +4,11 @@ import { useAuth } from '../auth/AuthContext';
 import { handOffPhotos } from '../lib/photoHandoff';
 
 interface Props {
-  /** The form to open: "/new", or "/new?like=…" to start from a combo's layers. */
-  to?: string;
+  /**
+   * The form to open: "/new", or "/new?like=…" to start from a combo's layers.
+   * A function is read when the photos are picked, for a target that changes on the page.
+   */
+  to?: string | (() => string);
   className: string;
   /** Accessible name, for buttons without visible text (the FAB). */
   label?: string;
@@ -23,7 +26,7 @@ export function AddComboButton({ to = '/new', className, label, children }: Prop
 
   if (!user || !profile) {
     return (
-      <Link to={to} className={className} aria-label={label}>
+      <Link to={typeof to === 'string' ? to : to()} className={className} aria-label={label}>
         {children}
       </Link>
     );
@@ -41,7 +44,7 @@ export function AddComboButton({ to = '/new', className, label, children }: Prop
           e.target.value = '';
           if (!files.length) return;
           handOffPhotos(files);
-          navigate(to);
+          navigate(typeof to === 'string' ? to : to());
         }}
       />
     </label>

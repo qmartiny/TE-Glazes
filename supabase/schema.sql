@@ -18,9 +18,11 @@ create table if not exists public.profiles (
 
 alter table public.profiles enable row level security;
 
+-- The site is members-only: only signed-in members can see anything.
 drop policy if exists "Profiles are visible to everyone" on public.profiles;
-create policy "Profiles are visible to everyone"
-  on public.profiles for select
+drop policy if exists "Profiles are visible to members" on public.profiles;
+create policy "Profiles are visible to members"
+  on public.profiles for select to authenticated
   using (true);
 
 drop policy if exists "Users can create their own profile" on public.profiles;
@@ -34,7 +36,8 @@ create policy "Users can update their own profile"
   using (id = (select auth.uid()))
   with check (id = (select auth.uid()));
 
-grant select on public.profiles to anon, authenticated;
+revoke all on public.profiles from anon;
+grant select on public.profiles to authenticated;
 grant insert, update on public.profiles to authenticated;
 
 -- ---------------------------------------------------------------------------
@@ -138,11 +141,13 @@ create table if not exists public.studio_admins (
 alter table public.studio_admins enable row level security;
 
 drop policy if exists "The studio team is visible to everyone" on public.studio_admins;
-create policy "The studio team is visible to everyone"
-  on public.studio_admins for select
+drop policy if exists "The studio team is visible to members" on public.studio_admins;
+create policy "The studio team is visible to members"
+  on public.studio_admins for select to authenticated
   using (true);
 
-grant select on public.studio_admins to anon, authenticated;
+revoke all on public.studio_admins from anon;
+grant select on public.studio_admins to authenticated;
 
 create or replace function public.is_studio_admin()
 returns boolean
@@ -308,11 +313,12 @@ alter table public.combinations add constraint combinations_official_shared chec
 
 alter table public.combinations enable row level security;
 
--- Anyone can browse shared combos (no sign-in needed); private ones are
--- only visible to the person who made them.
+-- Members can see shared combos; private ones are only visible to the
+-- person who made them.
 drop policy if exists "Shared combos are visible to everyone" on public.combinations;
-create policy "Shared combos are visible to everyone"
-  on public.combinations for select
+drop policy if exists "Shared combos are visible to members" on public.combinations;
+create policy "Shared combos are visible to members"
+  on public.combinations for select to authenticated
   using (not is_private or user_id = (select auth.uid()));
 
 drop policy if exists "Users can add their own combos" on public.combinations;
@@ -340,11 +346,14 @@ create policy "Users delete their own combos; the studio team any shared one"
   on public.combinations for delete to authenticated
   using (user_id = (select auth.uid()) or (not is_private and (select public.is_studio_admin())));
 
-grant select on public.combinations to anon, authenticated;
+revoke all on public.combinations from anon;
+grant select on public.combinations to authenticated;
 grant insert, update, delete on public.combinations to authenticated;
 
 -- ---------------------------------------------------------------------------
 -- Photo storage: public-read bucket, each user writes only to <their id>/...
+-- Files have long random names, which only members can see (in posts), and
+-- listing the bucket needs signing in.
 -- ---------------------------------------------------------------------------
 insert into storage.buckets (id, name, public, file_size_limit, allowed_mime_types)
 values ('photos', 'photos', true, 5242880, array['image/jpeg', 'image/png', 'image/webp'])

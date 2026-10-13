@@ -36,6 +36,20 @@ function pick(counts: Count[], viewed: string | undefined, fallback: string, you
   return most?.count ? most.name : fallback;
 }
 
+/**
+ * Where the studio team's Add tile button (in place of +) goes: a tile on the clay
+ * and kiln being viewed, or of the glaze being viewed. Read when it's tapped.
+ */
+export function addTileLink(): string {
+  const viewed = readPref<Viewed>('tiles') ?? {};
+  const firing = viewed.firing ?? FIRINGS[0].value;
+  const start =
+    viewed.by === 'glaze' && viewed.glaze
+      ? { tile: viewed.glaze, firing }
+      : { tile: '', ...(viewed.clay && { clay: viewed.clay }), firing };
+  return `/new?${new URLSearchParams(start)}`;
+}
+
 function yourClay(): string | undefined {
   const last = readPref<{ clays?: ClayPart[]; clay?: string }>('last');
   return normalizeClays(last?.clays, last?.clay)[0]?.name;
