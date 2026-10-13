@@ -1,5 +1,12 @@
 import { describe, expect, it } from 'vitest';
-import { comboKey, isStudioMaterial, layerLabel, normalizeLayers, usesStudioMaterialsOnly } from './layers';
+import {
+  comboKey,
+  isStudioMaterial,
+  layerLabel,
+  memberNames,
+  normalizeLayers,
+  usesStudioMaterialsOnly,
+} from './layers';
 
 describe('normalizeLayers', () => {
   it('reads combos saved before slips and oxides as glazes', () => {
@@ -77,5 +84,46 @@ describe('studio materials', () => {
         { type: 'glaze', name: 'Mayco Red' },
       ]),
     ).toBe(false);
+  });
+});
+
+describe('memberNames', () => {
+  const post = (layers: [string, string][], clays: string[] = ['Craft Crank']) => ({
+    layers: layers.map(([type, name]) => ({ type: type as 'glaze' | 'slip' | 'oxide', name })),
+    clays: clays.map((name) => ({ name })),
+  });
+
+  it("lists the custom names members have used (not the studio's), once each, A to Z", () => {
+    const names = memberNames(
+      [
+        post([
+          ['glaze', 'Tenmoku'],
+          ['glaze', 'Mayco Stroke & Coat Red'],
+        ]),
+        post(
+          [
+            ['glaze', 'Amaco Velvet Jet Black'],
+            ['slip', 'Porcelain slip'],
+          ],
+          ['Paper clay', 'Reclaim'],
+        ),
+        post([['glaze', 'amaco velvet  jet black']]),
+      ],
+      ['Craft Crank', 'Reclaim'],
+    );
+    expect(names).toEqual({
+      glaze: ['Amaco Velvet Jet Black', 'Mayco Stroke & Coat Red'],
+      slip: ['Porcelain slip'],
+      oxide: [],
+      clay: ['Paper clay'],
+    });
+  });
+
+  it('uses the spelling most people used', () => {
+    const names = memberNames(
+      [post([['glaze', 'amaco red']]), post([['glaze', 'Amaco Red']]), post([['glaze', 'Amaco Red']])],
+      [],
+    );
+    expect(names.glaze).toEqual(['Amaco Red']);
   });
 });

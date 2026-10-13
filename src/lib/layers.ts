@@ -59,3 +59,41 @@ export function normalizeLayers(raw: unknown): Layer[] {
     return [{ type, name, application }];
   });
 }
+
+export type NameKind = LayerType | 'clay';
+
+/**
+ * Glazes, slips, oxides and clays members have typed in that aren't the
+ * studio's own, in the spelling used most (the first seen wins a tie: posts
+ * come newest first), A to Z.
+ * Offered in the pickers so the same product is spelled the same way.
+ */
+export function memberNames(
+  posts: { layers: Pick<Layer, 'type' | 'name'>[]; clays: { name: string }[] }[],
+  studioClays: readonly string[],
+): Record<NameKind, string[]> {
+  const spellings: Record<NameKind, Map<string, Map<string, number>>> = {
+    glaze: new Map(),
+    slip: new Map(),
+    oxide: new Map(),
+    clay: new Map(),
+  };
+  const add = (kind: NameKind, name: string) => {
+    const key = normName(name);
+    if (!key) return;
+    const counts = spellings[kind].get(key) ?? new Map<string, number>();
+    const spelling = name.trim().replace(/\s+/g, ' ');
+    counts.set(spelling, (counts.get(spelling) ?? 0) + 1);
+    spellings[kind].set(key, counts);
+  };
+  for (const post of posts) {
+    for (const layer of post.layers) if (!isStudioMaterial(layer)) add(layer.type, layer.name);
+    for (const clay of post.clays) {
+      if (!studioClays.some((c) => normName(c) === normName(clay.name))) add('clay', clay.name);
+    }
+  }
+  const pick = (counts: Map<string, number>) =>
+    [...counts.entries()].reduce((best, next) => (next[1] > best[1] ? next : best))[0];
+  const list = (kind: NameKind) => [...spellings[kind].values()].map(pick).sort((a, b) => a.localeCompare(b));
+  return { glaze: list('glaze'), slip: list('slip'), oxide: list('oxide'), clay: list('clay') };
+}
