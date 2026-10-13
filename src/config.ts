@@ -12,6 +12,10 @@ export const APP_NAME = 'Glaze Book';
 export const SUPABASE_URL = 'https://ctdctrnaapynovtwkikl.supabase.co';
 export const SUPABASE_ANON_KEY = 'sb_publishable__YtJahehrqHV0QO8ZMzIJA_nC1RIZVK';
 
+// Only signed-in members can see the site; visitors get the sign-in page.
+// The database enforces this too: to open it up, see "Public browsing" in the README.
+export const MEMBERS_ONLY = true;
+
 // The studio's lists. They're shown in alphabetical order, whatever the order here.
 const az = (list: string[]) => [...list].sort((a, b) => a.localeCompare(b));
 

@@ -364,6 +364,11 @@ a.card:active::after,
   padding: 8px var(--gutter) calc(var(--nav-bar-h) + 96px + env(safe-area-inset-bottom, 0px));
 }
 
+/* Signed out on a members-only site: no navigation to leave room for. */
+.app-gated .footer {
+  padding-bottom: calc(24px + env(safe-area-inset-bottom, 0px));
+}
+
 /* Navigation bar (compact) */
 .nav-bar {
   position: fixed;
@@ -465,6 +470,16 @@ a.card:active::after,
   text-decoration: none;
 }
 
+.fab-extended {
+  display: flex;
+  gap: 12px;
+  width: auto;
+  padding: 0 20px 0 16px;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.006rem;
+}
+
 .fab-compact {
   position: fixed;
   right: 16px;
@@ -517,6 +532,10 @@ a.card:active::after,
 
   .app-body {
     margin-left: var(--rail-w);
+  }
+
+  .app-gated .app-body {
+    margin-left: 0;
   }
 
   .nav-bar,

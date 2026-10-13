@@ -1,4 +1,5 @@
 import { Link } from 'react-router';
+import { MEMBERS_ONLY } from '../config';
 
 /** What's stored, who sees it and how to delete it. */
 export function PrivacyPage() {
@@ -18,10 +19,14 @@ export function PrivacyPage() {
 
       <h2 className="section-title">Who can see it</h2>
       <ul>
-        <li>Anyone with the link can see members’ names, studios and shared posts.</li>
         <li>
-          Private posts are only shown to you. Their photos are stored under long random links, so they can’t be found,
-          but anyone given an exact image link could open it.
+          {MEMBERS_ONLY ? 'Only signed-in members' : 'Anyone with the link'} can see members’ names, studios and shared
+          posts.
+        </li>
+        <li>Private posts are only shown to you.</li>
+        <li>
+          Photos are stored under long random links, so they can’t be found without signing in, but anyone given an
+          exact image link could open it.
         </li>
         <li>Your email is never shown.</li>
       </ul>
@@ -31,8 +36,11 @@ export function PrivacyPage() {
         Photos are resized on your phone before they’re uploaded, which also removes their location and camera details.
       </p>
 
-      <h2 className="section-title">No tracking</h2>
-      <p>No ads, analytics or tracking. Your browser keeps you signed in and remembers settings like the theme.</p>
+      <h2 className="section-title">Visits</h2>
+      <p>
+        We count visits with Cloudflare Web Analytics, which doesn’t use cookies or follow you to other sites. No ads.
+        Your browser keeps you signed in and remembers settings like the theme.
+      </p>
 
       <h2 className="section-title">Deleting</h2>
       <ul>

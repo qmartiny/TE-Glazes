@@ -3,7 +3,7 @@ import { Link, Navigate, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
 import { ChoiceField } from '../components/ChoiceField';
 import { TextField } from '../components/Fields';
-import { APP_NAME, STUDIOS } from '../config';
+import { APP_NAME, MEMBERS_ONLY, STUDIOS } from '../config';
 import { backend } from '../lib/api';
 import { DEMO_SIGNUP_CODE } from '../lib/api/local';
 import { errorMessage, useAsync } from '../lib/useAsync';
@@ -190,7 +190,10 @@ export function SignInPage() {
           </button>
         )}
         <p className="section-supporting center">
-          Anyone can browse. You need an account to add combos. <Link to="/privacy">Privacy</Link>
+          {MEMBERS_ONLY
+            ? 'For studio members only. To join, create an account with the sign-up code from the studio.'
+            : 'Anyone can browse. You need an account to add combos.'}{' '}
+          <Link to="/privacy">Privacy</Link>
         </p>
         {backend.mode === 'demo' && (
           <p className="section-supporting center">

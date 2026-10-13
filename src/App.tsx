@@ -1,7 +1,7 @@
 import { createHashRouter } from 'react-router';
 import { RouterProvider } from 'react-router/dom';
 import { AuthProvider } from './auth/AuthContext';
-import { RequireAuth } from './auth/RequireAuth';
+import { MembersOnly, RequireAuth } from './auth/RequireAuth';
 import { Layout } from './components/Layout';
 import { AccountPage } from './pages/AccountPage';
 import { BrowsePage } from './pages/BrowsePage';
@@ -20,40 +20,46 @@ const router = createHashRouter([
   {
     element: <Layout />,
     children: [
-      { index: true, element: <BrowsePage /> },
-      { path: 'c/:id', element: <ComboPage /> },
-      { path: 'combo/:key', element: <ComboPage /> },
-      {
-        path: 'c/:id/edit',
-        element: (
-          <RequireAuth needsProfile>
-            <ComboFormPage />
-          </RequireAuth>
-        ),
-      },
-      {
-        path: 'new',
-        element: (
-          <RequireAuth needsProfile>
-            <ComboFormPage />
-          </RequireAuth>
-        ),
-      },
-      { path: 'tiles', element: <TilesPage /> },
-      { path: 'glaze/:name', element: <GlazePage /> },
-      { path: 'u/:id', element: <ProfilePage /> },
-      {
-        path: 'account',
-        element: (
-          <RequireAuth>
-            <AccountPage />
-          </RequireAuth>
-        ),
-      },
       { path: 'signin', element: <SignInPage /> },
       { path: 'privacy', element: <PrivacyPage /> },
       { path: 'reset-password', element: <ResetPasswordPage /> },
-      { path: '*', element: <NotFoundPage /> },
+      // The rest needs signing in when the site is members-only (see config.ts).
+      {
+        element: <MembersOnly />,
+        children: [
+          { index: true, element: <BrowsePage /> },
+          { path: 'c/:id', element: <ComboPage /> },
+          { path: 'combo/:key', element: <ComboPage /> },
+          {
+            path: 'c/:id/edit',
+            element: (
+              <RequireAuth needsProfile>
+                <ComboFormPage />
+              </RequireAuth>
+            ),
+          },
+          {
+            path: 'new',
+            element: (
+              <RequireAuth needsProfile>
+                <ComboFormPage />
+              </RequireAuth>
+            ),
+          },
+          { path: 'tiles', element: <TilesPage /> },
+          { path: 'glaze/:name', element: <GlazePage /> },
+          { path: 'u/:id', element: <ProfilePage /> },
+          {
+            path: 'account',
+            element: (
+              <RequireAuth>
+                <AccountPage />
+              </RequireAuth>
+            ),
+          },
+          { path: '*', element: <NotFoundPage /> },
+        ],
+      },
     ],
   },
 ]);
