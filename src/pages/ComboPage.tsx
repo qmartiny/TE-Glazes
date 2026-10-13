@@ -32,7 +32,8 @@ function sectionTitle(layers: Layer[]) {
 
 /**
  * A combination and everyone's results for it. Reached as /combo/<key>, or
- * as /c/<id> for one person's result (shown first).
+ * as /c/<id> for one person's result (shown first). A studio test tile at
+ * /c/<id> gets a page of its own: the tile, then the glaze's other tiles.
  */
 export function ComboPage() {
   const { id, key } = useParams();
@@ -71,6 +72,8 @@ export function ComboPage() {
   );
   const memberResults = group.results.filter((r) => !r.official);
   const people = new Set(memberResults.map((r) => r.userId)).size;
+  // Opened from Test tiles or a glaze's page. Members' results with the glaze are on the glaze's page.
+  const tileView = !!id && canBeStudioTile(group.layers) && studioTiles.some((t) => t.id === id);
   const openTile = full.data?.find((c) => c.id === id && c.official);
   // The result you followed a link to comes first, then newest first.
   const combos = (full.data ?? [])
@@ -132,7 +135,12 @@ export function ComboPage() {
       invalidateResults();
       setDeleting(null);
       showSnackbar(mine ? 'Result deleted' : 'Post removed');
-      if (group.results.length > 1) {
+      const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
+      if (tileView) {
+        if (idx > 0)
+          navigate(-1); // back to the tiles
+        else navigate('/tiles', { replace: true });
+      } else if (group.results.length > 1) {
         navigate(comboLink(group.key), { replace: true });
         retry();
       } else {
@@ -145,6 +153,77 @@ export function ComboPage() {
     }
   }
 
+  const dialog = (
+    <Dialog
+      open={deleting !== null}
+      headline={mine ? 'Delete your result?' : `Remove ${deleting?.author?.displayName ?? 'this member'}’s post?`}
+      onClose={() => !busy && setDeleting(null)}
+      actions={
+        <>
+          <button type="button" className="btn btn-text" onClick={() => setDeleting(null)} disabled={busy}>
+            Cancel
+          </button>
+          <button type="button" className="btn btn-text btn-danger" onClick={onDelete} disabled={busy}>
+            {busy ? 'Deleting…' : mine ? 'Delete' : 'Remove'}
+          </button>
+        </>
+      }
+    >
+      <p>
+        {mine ? 'Your' : 'Their'} photos and notes will be removed for good.
+        {group.results.length > 1 && !tileView && ' Other members’ results for this combo stay.'}
+      </p>
+      {deleteError && (
+        <p className="form-error" role="alert">
+          {deleteError}
+        </p>
+      )}
+    </Dialog>
+  );
+
+  if (tileView) {
+    const others = studioTiles.filter((t) => t.id !== id);
+    return (
+      <article className="combo-group">
+        <h1 className="page-title">{title}</h1>
+        <section className="results" aria-label="Studio test tile">
+          {full.error && <p className="form-error">Couldn't load this tile: {full.error}</p>}
+          {openTile ? (
+            <ResultBlock
+              combo={openTile}
+              highlighted={false}
+              isOwner={user?.id === openTile.userId}
+              canRemove={canRemove(openTile)}
+              onDelete={() => setDeleting(openTile)}
+              onMove={canMove(openTile) ? () => onMove(openTile) : undefined}
+              moving={moving}
+            />
+          ) : (
+            !full.error && <div className="spinner" aria-label="Loading" />
+          )}
+        </section>
+        {others.length > 0 && (
+          <section className="studio-tiles" aria-labelledby="other-tiles-h">
+            <h2 id="other-tiles-h" className="section-title">
+              Other {title} tiles
+            </h2>
+            <TileStrip tiles={others} replace />
+          </section>
+        )}
+        <p className="tiles-glaze-link">
+          <Link to={glazeLink(title)}>
+            Combos with {title}
+            <Icon name="chevron_right" />
+          </Link>
+        </p>
+        {dialog}
+      </article>
+    );
+  }
+
+  // One layer needs no numbering or order.
+  const single = group.layers.length === 1;
+
   return (
     <article className="combo-group">
       <div className="combo-overview">
@@ -155,7 +234,8 @@ export function ComboPage() {
 
         <section aria-labelledby="layers-h">
           <h2 id="layers-h" className="section-title">
-            {sectionTitle(group.layers)} <span className="section-hint">in the order applied</span>
+            {single ? layerTypeInfo(group.layers[0].type).label : sectionTitle(group.layers)}
+            {!single && <span className="section-hint"> in the order applied</span>}
           </h2>
           <ul className="list">
             {group.layers.map((layer, i) => (
@@ -165,7 +245,7 @@ export function ComboPage() {
                   to={layer.type === 'glaze' ? glazeLink(layer.name) : browseLink({ [layer.type]: layer.name })}
                   className="list-item"
                 >
-                  <span className="list-avatar">{i + 1}</span>
+                  {!single && <span className="list-avatar">{i + 1}</span>}
                   <span className="list-text">
                     <span className="list-headline">{layer.name}</span>
                     <span className="list-supporting">
@@ -197,18 +277,7 @@ export function ComboPage() {
         {studioTiles.length > 0 && (
           <div className="studio-tiles">
             <h2 className="section-title">Studio test tiles</h2>
-            <TileStrip tiles={studioTiles} openId={openTile?.id} />
-            {openTile && (
-              <ResultBlock
-                combo={openTile}
-                highlighted={false}
-                isOwner={user?.id === openTile.userId}
-                canRemove={canRemove(openTile)}
-                onDelete={() => setDeleting(openTile)}
-                onMove={canMove(openTile) ? () => onMove(openTile) : undefined}
-                moving={moving}
-              />
-            )}
+            <TileStrip tiles={studioTiles} />
           </div>
         )}
         {memberResults.length > 0 && (
@@ -232,31 +301,7 @@ export function ComboPage() {
         ))}
       </section>
 
-      <Dialog
-        open={deleting !== null}
-        headline={mine ? 'Delete your result?' : `Remove ${deleting?.author?.displayName ?? 'this member'}’s post?`}
-        onClose={() => !busy && setDeleting(null)}
-        actions={
-          <>
-            <button type="button" className="btn btn-text" onClick={() => setDeleting(null)} disabled={busy}>
-              Cancel
-            </button>
-            <button type="button" className="btn btn-text btn-danger" onClick={onDelete} disabled={busy}>
-              {busy ? 'Deleting…' : mine ? 'Delete' : 'Remove'}
-            </button>
-          </>
-        }
-      >
-        <p>
-          {mine ? 'Your' : 'Their'} photos and notes will be removed for good.
-          {group.results.length > 1 && ' Other members’ results for this combo stay.'}
-        </p>
-        {deleteError && (
-          <p className="form-error" role="alert">
-            {deleteError}
-          </p>
-        )}
-      </Dialog>
+      {dialog}
     </article>
   );
 }
@@ -282,7 +327,10 @@ function ResultBlock({
 }) {
   const applied = combo.layers.filter((l) => l.application);
   return (
-    <article className={`result${highlighted ? ' highlight' : ''}`} aria-label={`Result by ${combo.author?.displayName}`}>
+    <article
+      className={`result${highlighted ? ' highlight' : ''}`}
+      aria-label={`Result by ${combo.author?.displayName}`}
+    >
       <div className="result-media">
         {combo.photos.length ? (
           <PhotoGallery photos={combo.photos} alt={groupTitle(combo)} />
