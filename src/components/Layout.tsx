@@ -5,7 +5,7 @@ import { APP_NAME, MEMBERS_ONLY } from '../config';
 import { backend } from '../lib/api';
 import { initials } from '../lib/format';
 import { addTileLink } from '../pages/TilesPage';
-import { Icon, Logo, type IconName } from './Icon';
+import { Icon, type IconName } from './Icon';
 import { AddComboButton } from './AddComboButton';
 import { SnackbarHost } from './Snackbar';
 
@@ -137,8 +137,7 @@ export function Layout() {
             </button>
           )}
           <Link to="/" className="top-app-bar-title">
-            <Logo />
-            <span>{APP_NAME}</span>
+            {APP_NAME}
           </Link>
         </header>
 
