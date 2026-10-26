@@ -203,6 +203,8 @@ create table if not exists public.combinations (
 -- Added later; "add column if not exists" also upgrades older databases.
 -- Clays, usually one, several for a mix:
 -- [{"name": "Craft Crank", "percent": 50}, {"name": "Reclaim", "percent": 50}]
+-- or, for a mix given in parts, with the percentages worked out from them:
+-- [{"name": "Craft Crank", "percent": 20, "parts": 1}, {"name": "Reclaim", "percent": 80, "parts": 4}]
 -- (`clay` above keeps a readable label, e.g. "50% Craft Crank + 50% Reclaim".)
 alter table public.combinations add column if not exists clays jsonb;
 -- A studio test tile, posted by the studio team.
@@ -302,7 +304,8 @@ alter table public.combinations add constraint combinations_clays_shape check (
     and length(clays::text) <= 1000
     and not jsonb_path_exists(
       clays,
-      '$[*] ? (!(@.name.type() == "string") || (@.percent.type() == "number" && (@.percent < 1 || @.percent > 100)))'
+      '$[*] ? (!(@.name.type() == "string") || (@.percent.type() == "number" && (@.percent < 1 || @.percent > 100))
+        || (exists(@.parts) && !(@.parts.type() == "number" && @.parts > 0 && @.parts <= 1000)))'
     )
   )
 );
