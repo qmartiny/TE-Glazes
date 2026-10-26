@@ -39,6 +39,8 @@ export interface ClayPart {
   name: string;
   /** Share of the mix, 1–100. Null for a single clay, or when the mix wasn't measured. */
   percent: number | null;
+  /** When the mix was given in parts (e.g. 1 part to 4), the parts; `percent` is worked out from them. */
+  parts?: number;
 }
 
 export interface Combo {

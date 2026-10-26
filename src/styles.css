@@ -36,9 +36,6 @@
   --md-inverse-surface: #33302e;
   --md-inverse-on-surface: #f7efec;
   --md-inverse-primary: #e1c0ab;
-  --logo-clay: #d9bf9f;
-  --logo-glaze: #47695e;
-  --logo-rim: #7d9a8f;
 
   --md-elevation-1: 0 1px 2px rgb(0 0 0 / 0.3), 0 1px 3px 1px rgb(0 0 0 / 0.15);
   --md-elevation-2: 0 1px 2px rgb(0 0 0 / 0.3), 0 2px 6px 2px rgb(0 0 0 / 0.15);
@@ -86,9 +83,6 @@
     --md-inverse-surface: #e8e1de;
     --md-inverse-on-surface: #33302e;
     --md-inverse-primary: #664e3d;
-    --logo-clay: #a8845f;
-    --logo-glaze: #aacec1;
-    --logo-rim: #6f9184;
     color-scheme: dark;
   }
 }
@@ -123,9 +117,6 @@
   --md-inverse-surface: #e8e1de;
   --md-inverse-on-surface: #33302e;
   --md-inverse-primary: #664e3d;
-  --logo-clay: #a8845f;
-  --logo-glaze: #aacec1;
-  --logo-rim: #6f9184;
   color-scheme: dark;
 }
 
@@ -308,7 +299,6 @@ a.card:active::after,
 .top-app-bar-title {
   display: inline-flex;
   align-items: center;
-  gap: 10px;
   padding-left: 12px;
   color: var(--md-on-surface);
   text-decoration: none;
@@ -567,6 +557,11 @@ a.card:active::after,
 
   .app-gated .app-body {
     margin-left: 0;
+  }
+
+  /* Line the name up with the page content. */
+  .top-app-bar-title {
+    padding-left: 20px;
   }
 
   .nav-bar,

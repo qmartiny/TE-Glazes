@@ -1,7 +1,7 @@
 import { useEffect, useState, type FormEvent } from 'react';
 import { Link, useNavigate, useParams, useSearchParams } from 'react-router';
 import { useAuth } from '../auth/AuthContext';
-import { ClayEditor, newClay, type ClayDraft } from '../components/ClayEditor';
+import { ClayEditor, newClay, type ClayDraft, type MixMode } from '../components/ClayEditor';
 import { LayerEditor, newLayer, type LayerDraft } from '../components/LayerEditor';
 import { existingPhoto, PhotoPicker, type PhotoDraft } from '../components/PhotoPicker';
 import { TextArea } from '../components/Fields';
@@ -9,7 +9,7 @@ import { Icon } from '../components/Icon';
 import { showSnackbar } from '../components/Snackbar';
 import { FIRINGS } from '../config';
 import { backend } from '../lib/api';
-import { mixProblem, normalizeClays } from '../lib/clays';
+import { mixProblem, normalizeClays, parseParts, partsProblem, partsToPercents } from '../lib/clays';
 import { comboKey, layerLabel } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
 import { canBeStudioTile } from '../lib/tiles';
@@ -88,11 +88,17 @@ function ComboForm({
           ? [newLayer('glaze', tile.glaze)]
           : [newLayer()],
   );
-  const [clays, setClays] = useState<ClayDraft[]>(() => {
-    const start =
-      initial?.clays ?? (tile?.clay ? [{ name: tile.clay, percent: null }] : normalizeClays(last?.clays, last?.clay));
-    return start.length ? start.map((c) => newClay(c.name, start.length > 1 ? c.percent : null)) : [newClay()];
-  });
+  const [startClays] = useState<ClayPart[]>(
+    () =>
+      initial?.clays ?? (tile?.clay ? [{ name: tile.clay, percent: null }] : normalizeClays(last?.clays, last?.clay)),
+  );
+  const [clays, setClays] = useState<ClayDraft[]>(() =>
+    startClays.length
+      ? startClays.map((c) => (startClays.length > 1 ? newClay(c.name, c.percent, c.parts) : newClay(c.name)))
+      : [newClay()],
+  );
+  // A mix given in parts opens in parts again.
+  const [mixMode, setMixMode] = useState<MixMode>(() => (startClays.some((c) => c.parts) ? 'parts' : 'percent'));
   const [firing, setFiring] = useState<Firing>(initial?.firing ?? tile?.firing ?? FIRINGS[0].value);
   const [description, setDescription] = useState(initial?.description ?? '');
   const [isPrivate, setIsPrivate] = useState(initial?.isPrivate ?? false);
@@ -118,8 +124,18 @@ function ComboForm({
       .map((l) => ({ type: l.type, name: l.name.trim(), application: l.application || null }))
       .filter((l) => l.name);
     if (!photos.length) return setError('Add at least one photo of the result.');
+    const byParts = mixMode === 'parts' && clays.length > 1;
+    const parts = clays.map((c) => (byParts && c.parts.trim() ? parseParts(c.parts) : null));
+    const partsError = partsProblem(parts);
+    if (partsError) return setError(partsError);
+    // Parts are kept as given, with the percentages worked out from them.
+    const fromParts = byParts && parts.every((p) => p !== null) ? partsToPercents(parts as number[]) : null;
     const cleanClays: ClayPart[] = clays
-      .map((c) => ({ name: c.name.trim(), percent: clays.length > 1 && c.percent ? Number(c.percent) : null }))
+      .map((c, i) => ({
+        name: c.name.trim(),
+        percent: fromParts ? fromParts[i] : !byParts && clays.length > 1 && c.percent ? Number(c.percent) : null,
+        ...(fromParts && { parts: parts[i]! }),
+      }))
       .filter((c) => c.name);
     if (!cleanClays.length) return setError('Choose the clay.');
     if (cleanClays.length < clays.length) return setError('Choose each clay in the mix, or remove the empty one.');
@@ -209,14 +225,14 @@ function ComboForm({
 
         <section className="form-section">
           <h2 className="section-title">Clay</h2>
-          <ClayEditor clays={clays} onChange={setClays} />
+          <ClayEditor clays={clays} onChange={setClays} mode={mixMode} onModeChange={setMixMode} />
         </section>
 
         <section className="form-section">
           <h2 className="section-title">Glazes, slips &amp; oxides</h2>
           <p className="section-supporting">
-            In the order you applied them. Add a slip or oxide only if you used one; one that went under the glaze
-            comes before it.
+            In the order you applied them. Add a slip or oxide only if you used one; one that went under the glaze comes
+            before it.
           </p>
           <LayerEditor layers={layers} onChange={setLayers} />
           {!official && sameCombo.length > 0 && (

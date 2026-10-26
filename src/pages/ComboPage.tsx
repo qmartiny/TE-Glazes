@@ -11,15 +11,22 @@ import { TileStrip } from '../components/TileStrip';
 import { CLAYS } from '../config';
 import { backend } from '../lib/api';
 import { firingLabel, groupResults, groupTitle, paramsFromFilters, type ComboGroup } from '../lib/filters';
+import { partsLabel } from '../lib/clays';
 import { formatDate } from '../lib/format';
 import { comboKey, isStudioMaterial, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
 import { canBeStudioTile, sortStudioTiles } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
-import type { Combo, ComboFilters, Layer } from '../types';
+import type { ClayPart, Combo, ComboFilters, Layer } from '../types';
 import { NotFoundPage } from './NotFoundPage';
 
 const browseLink = (filters: ComboFilters) => `/?${paramsFromFilters(filters)}`;
+
+/** One clay of a mix: "50% Reclaim", or "1 part Craft Crank (20%)" when it was given in parts. */
+function mixShare(c: ClayPart) {
+  if (c.parts) return `${partsLabel(c.parts)} ${c.name}${c.percent ? ` (${c.percent}%)` : ''}`;
+  return c.percent ? `${c.percent}% ${c.name}` : c.name;
+}
 
 /** "Glazes", or "Glazes & slips" etc. when the combo uses more than glaze. */
 function sectionTitle(layers: Layer[]) {
@@ -359,9 +366,7 @@ function ResultBlock({
           {combo.clays.map((c) => (
             <Link key={c.name} to={browseLink({ clay: c.name })} className="chip chip-assist">
               <Icon name="texture" className="chip-leading chip-icon-primary" />
-              <span className="chip-text">
-                {combo.clays.length > 1 && c.percent ? `${c.percent}% ${c.name}` : c.name}
-              </span>
+              <span className="chip-text">{combo.clays.length > 1 ? mixShare(c) : c.name}</span>
             </Link>
           ))}
           <Link to={browseLink({ firing: combo.firing })} className="chip chip-assist">
