@@ -5,7 +5,7 @@ import { AddComboButton } from '../components/AddComboButton';
 import { CardMedia, GridSkeleton, LoadError, glazeLink } from '../components/Cards';
 import { Icon } from '../components/Icon';
 import { PickerField } from '../components/PickerField';
-import { CLAYS, FIRINGS, GLAZES } from '../config';
+import { CLAYS, FIRINGS, GLAZES, TILES_IN_PROGRESS } from '../config';
 import { normalizeClays } from '../lib/clays';
 import { firingLabel } from '../lib/filters';
 import { readPref, writePref } from '../lib/format';
@@ -151,7 +151,13 @@ export function TilesPage() {
   return (
     <>
       <section className="intro">
-        <h1 className="page-title">Studio test tiles</h1>
+        <div className="title-row">
+          <h1 className="page-title">Studio test tiles</h1>
+          {TILES_IN_PROGRESS && <span className="title-badge">In progress</span>}
+        </div>
+        {TILES_IN_PROGRESS && (
+          <p className="section-supporting">The studio is still making these, so some are missing.</p>
+        )}
       </section>
 
       <div className="tabs tiles-tabs" role="tablist" aria-label="Show tiles">

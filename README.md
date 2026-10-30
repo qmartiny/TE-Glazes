@@ -78,6 +78,7 @@ Edit [`src/config.ts`](src/config.ts) to change:
 - the studio's **glazes, slips, oxides and clay bodies**
 - the studio locations people can pick on their profile, and application methods (dipped, poured, …)
 - the site name
+- the **In progress** note on the Test tiles page (`TILES_IN_PROGRESS`): switch it off once the studio has made all its tiles
 
 These lists fill the pickers and filters, in alphabetical order. People can also type a name that isn't listed and pick **Use "…"**; those count as not the studio's own, so they're left out of Browse's Studio glazes only view and get no studio test tiles.
 
