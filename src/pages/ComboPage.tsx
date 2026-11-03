@@ -78,6 +78,9 @@ export function ComboPage() {
     CLAYS,
   );
   const memberResults = group.results.filter((r) => !r.official);
+  // Only the studio tiles on the clay of the result you came to (or of all of them): one on another clay isn't theirs.
+  const focus = memberResults.find((r) => r.id === id);
+  const relatedTiles = tilesForResults(studioTiles, focus ? [focus] : memberResults);
   const people = new Set(memberResults.map((r) => r.userId)).size;
   // Opened from Test tiles or a glaze's page. Members' results with the glaze are on the glaze's page.
   const tileView = !!id && canBeStudioTile(group.layers) && studioTiles.some((t) => t.id === id);
@@ -89,7 +92,7 @@ export function ComboPage() {
   const byline = [
     memberResults.length &&
       `${memberResults.length} ${memberResults.length === 1 ? 'result' : 'results'} from ${people} ${people === 1 ? 'member' : 'members'}`,
-    studioTiles.length && `${studioTiles.length} studio test ${studioTiles.length === 1 ? 'tile' : 'tiles'}`,
+    relatedTiles.length && `${relatedTiles.length} studio test ${relatedTiles.length === 1 ? 'tile' : 'tiles'}`,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -236,9 +239,6 @@ export function ComboPage() {
 
   // One layer needs no numbering or order.
   const single = group.layers.length === 1;
-  // The glaze's studio tiles, those on the clay of the result you came to (or of all of them) first.
-  const focus = memberResults.find((r) => r.id === id);
-  const tilesBelow = tilesForResults(studioTiles, focus ? [focus] : memberResults);
 
   // Photos first, then the glazes, then the studio's tiles of the glaze.
   return (
@@ -306,15 +306,12 @@ export function ComboPage() {
         </div>
       </div>
 
-      {studioTiles.length > 0 && (
+      {relatedTiles.length > 0 && (
         <section className="studio-tiles" aria-labelledby="tiles-h">
           <h2 id="tiles-h" className="section-title">
             Studio test tiles
           </h2>
-          {memberResults.length > 0 && tilesBelow.missing.length > 0 && (
-            <p className="section-supporting">No {tilesBelow.missing.join(' or ')} tile yet.</p>
-          )}
-          <TileStrip tiles={tilesBelow.tiles} />
+          <TileStrip tiles={relatedTiles} />
         </section>
       )}
 

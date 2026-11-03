@@ -123,25 +123,28 @@ describe('tilesForResults', () => {
   const tiles = [
     tile('Vulcan Coarse Black', 'oxidation'),
     tile('Sibelco Black', 'reduction'),
+    tile('Sibelco Black', 'oxidation'),
     tile('White Grogged', 'oxidation'),
   ];
-  const clays = (r: { clays: { name: string }[] }) => r.clays[0].name;
+  const label = (t: ResultSummary) => `${t.clays[0].name}/${t.firing}`;
 
-  it('puts tiles on the same clay first, then the same kiln', () => {
+  it('keeps only the tiles on the same clay, same kiln first', () => {
     const mark = post('Sibelco Black', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
-    const { tiles: order, missing } = tilesForResults(tiles, [mark]);
-    expect(order.map((t) => `${clays(t)}/${t.firing}`)).toEqual([
-      'Sibelco Black/reduction',
-      'Vulcan Coarse Black/oxidation',
-      'White Grogged/oxidation',
-    ]);
-    expect(missing).toEqual([]);
+    expect(tilesForResults(tiles, [mark]).map(label)).toEqual(['Sibelco Black/oxidation', 'Sibelco Black/reduction']);
   });
 
-  it('names the clays that have no tile', () => {
-    const mark = post('sibelco black', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
-    const { tiles: order, missing } = tilesForResults(tiles.slice(0, 1).concat(tiles.slice(2)), [mark]);
-    expect(order.map(clays)).toEqual(['Vulcan Coarse Black', 'White Grogged']);
-    expect(missing).toEqual(['sibelco black']);
+  it('shows none when the clay has no tile', () => {
+    const mark = post('Porcelain', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
+    expect(tilesForResults(tiles, [mark])).toEqual([]);
+  });
+
+  it('matches any clay of a mix, and keeps all with no results to go by', () => {
+    const mix = { ...post('x', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01') };
+    mix.clays = [
+      { name: 'Reclaim', percent: 50 },
+      { name: 'white grogged', percent: 50 },
+    ];
+    expect(tilesForResults(tiles, [mix]).map(label)).toEqual(['White Grogged/oxidation']);
+    expect(tilesForResults(tiles, [])).toHaveLength(4);
   });
 });

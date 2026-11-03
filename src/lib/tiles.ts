@@ -142,20 +142,18 @@ export function sortStudioTiles<T extends { clays: ClayPart[]; firing: Firing }>
 }
 
 /**
- * A combo's studio tiles with the ones most like the results being looked at
- * first: same clay and kiln, then same clay, then same kiln. Also the clays of
- * those results that have no tile, to say so (a tile on another clay isn't theirs).
+ * The studio tiles that go with the results being looked at: only those on the
+ * same clay (same kiln first), since a tile on another clay isn't theirs. With no
+ * results to go by, all of them.
  */
 export function tilesForResults<T extends { clays: ClayPart[]; firing: Firing }>(
   tiles: T[],
   results: { clays: ClayPart[]; firing: Firing }[],
-): { tiles: T[]; missing: string[] } {
-  const wanted = clayNames(results.flatMap((r) => r.clays));
+): T[] {
+  if (!results.length) return tiles;
+  const wanted = clayNames(results.flatMap((r) => r.clays)).map(normName);
   const kilns = new Set(results.map((r) => r.firing));
-  const onClay = (t: T, clay: string) => clayNames(t.clays).some((c) => normName(c) === normName(clay));
-  const rank = (t: T) => (wanted.some((c) => onClay(t, c)) ? 0 : 2) + (kilns.has(t.firing) ? 0 : 1);
-  return {
-    tiles: [...tiles].sort((a, b) => rank(a) - rank(b)),
-    missing: wanted.filter((c) => !tiles.some((t) => onClay(t, c))),
-  };
+  return tiles
+    .filter((t) => clayNames(t.clays).some((c) => wanted.includes(normName(c))))
+    .sort((a, b) => Number(!kilns.has(a.firing)) - Number(!kilns.has(b.firing)));
 }
