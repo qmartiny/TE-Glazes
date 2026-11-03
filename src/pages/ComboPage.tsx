@@ -141,7 +141,7 @@ export function ComboPage() {
       await backend.deleteCombo(deleting);
       invalidateResults();
       setDeleting(null);
-      showSnackbar(mine ? 'Result deleted' : 'Post removed');
+      showSnackbar(deleting.official ? 'Tile deleted' : mine ? 'Result deleted' : 'Post removed');
       const idx = (window.history.state as { idx?: number } | null)?.idx ?? 0;
       if (tileView) {
         if (idx > 0)
@@ -163,7 +163,13 @@ export function ComboPage() {
   const dialog = (
     <Dialog
       open={deleting !== null}
-      headline={mine ? 'Delete your result?' : `Remove ${deleting?.author?.displayName ?? 'this member'}’s post?`}
+      headline={
+        deleting?.official
+          ? 'Delete this test tile?'
+          : mine
+            ? 'Delete your result?'
+            : `Remove ${deleting?.author?.displayName ?? 'this member'}’s post?`
+      }
       onClose={() => !busy && setDeleting(null)}
       actions={
         <>
@@ -171,13 +177,13 @@ export function ComboPage() {
             Cancel
           </button>
           <button type="button" className="btn btn-text btn-danger" onClick={onDelete} disabled={busy}>
-            {busy ? 'Deleting…' : mine ? 'Delete' : 'Remove'}
+            {busy ? 'Deleting…' : mine || deleting?.official ? 'Delete' : 'Remove'}
           </button>
         </>
       }
     >
       <p>
-        {mine ? 'Your' : 'Their'} photos and notes will be removed for good.
+        {deleting?.official ? 'Its' : mine ? 'Your' : 'Their'} photos and notes will be removed for good.
         {group.results.length > 1 && !tileView && ' Other members’ results for this combo stay.'}
       </p>
       {deleteError && (
@@ -336,7 +342,7 @@ function ResultBlock({
   return (
     <article
       className={`result${highlighted ? ' highlight' : ''}`}
-      aria-label={`Result by ${combo.author?.displayName}`}
+      aria-label={combo.official ? 'Studio test tile' : `Result by ${combo.author?.displayName}`}
     >
       <div className="result-media">
         {combo.photos.length ? (
@@ -346,11 +352,14 @@ function ResultBlock({
         )}
       </div>
       <div className="result-info">
-        <p className="byline">
-          {combo.author ? <Link to={`/u/${combo.userId}`}>{combo.author.displayName}</Link> : 'A member'}
-          {' · '}
-          {formatDate(combo.createdAt)}
-        </p>
+        {/* A studio tile is the studio's, not whoever photographed it. */}
+        {!combo.official && (
+          <p className="byline">
+            {combo.author ? <Link to={`/u/${combo.userId}`}>{combo.author.displayName}</Link> : 'A member'}
+            {' · '}
+            {formatDate(combo.createdAt)}
+          </p>
+        )}
         {combo.official && (
           <p className="private-note">
             <Icon name="verified" /> Studio test tile

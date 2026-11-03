@@ -16,8 +16,8 @@ export const SUPABASE_ANON_KEY = 'sb_publishable__YtJahehrqHV0QO8ZMzIJA_nC1RIZVK
 // The database enforces this too: to open it up, see "Public browsing" in the README.
 export const MEMBERS_ONLY = true;
 
-// Shows "In progress" on the Test tiles page while the studio is still making
-// tiles. Set it to false once they're all done.
+// Shows "In progress" on the Test tiles page while photos of the tiles are still
+// being added. Set it to false once they're all up.
 export const TILES_IN_PROGRESS = true;
 
 // The studio's lists. They're shown in alphabetical order, whatever the order here.

@@ -156,7 +156,7 @@ export function TilesPage() {
           {TILES_IN_PROGRESS && <span className="title-badge">In progress</span>}
         </div>
         {TILES_IN_PROGRESS && (
-          <p className="section-supporting">The studio is still making these, so some are missing.</p>
+          <p className="section-supporting">We’re still adding photos, so some tiles are missing.</p>
         )}
       </section>
 
@@ -229,7 +229,7 @@ function Segmented<T extends string>({
   );
 }
 
-/** A studio tile, or a gap: "No tile yet", with Add tile for the studio team. */
+/** A studio tile, or a gap: "No photo yet", with Add tile for the studio team. */
 function TileCard({
   title,
   tile,
@@ -256,7 +256,7 @@ function TileCard({
   return (
     <div className="card combo-card tile-missing">
       <div className="card-media">
-        <div className="card-noimg">No tile yet</div>
+        <div className="card-noimg">No photo yet</div>
       </div>
       <div className="card-content">
         <h2 className="card-title">{title}</h2>
