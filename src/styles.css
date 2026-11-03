@@ -901,6 +901,24 @@ a.card:active::after,
   margin: 8px 0 16px;
 }
 
+.title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 4px 12px;
+}
+
+/* e.g. "In progress" next to Studio test tiles */
+.title-badge {
+  padding: 2px 10px;
+  border-radius: 999px;
+  background: var(--md-tertiary-container);
+  color: var(--md-on-tertiary-container);
+  font-size: 0.75rem;
+  line-height: 1.25rem;
+  font-weight: 600;
+}
+
 /* A button that looks like a link, inside a sentence */
 .link-btn {
   padding: 0;

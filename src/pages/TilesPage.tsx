@@ -5,7 +5,7 @@ import { AddComboButton } from '../components/AddComboButton';
 import { CardMedia, GridSkeleton, LoadError, glazeLink } from '../components/Cards';
 import { Icon } from '../components/Icon';
 import { PickerField } from '../components/PickerField';
-import { CLAYS, FIRINGS, GLAZES } from '../config';
+import { CLAYS, FIRINGS, GLAZES, TILES_IN_PROGRESS } from '../config';
 import { normalizeClays } from '../lib/clays';
 import { firingLabel } from '../lib/filters';
 import { readPref, writePref } from '../lib/format';
@@ -151,7 +151,13 @@ export function TilesPage() {
   return (
     <>
       <section className="intro">
-        <h1 className="page-title">Studio test tiles</h1>
+        <div className="title-row">
+          <h1 className="page-title">Studio test tiles</h1>
+          {TILES_IN_PROGRESS && <span className="title-badge">In progress</span>}
+        </div>
+        {TILES_IN_PROGRESS && (
+          <p className="section-supporting">We’re still adding photos, so some tiles are missing.</p>
+        )}
       </section>
 
       <div className="tabs tiles-tabs" role="tablist" aria-label="Show tiles">
@@ -223,7 +229,7 @@ function Segmented<T extends string>({
   );
 }
 
-/** A studio tile, or a gap: "No tile yet", with Add tile for the studio team. */
+/** A studio tile, or a gap: "No photo yet", with Add tile for the studio team. */
 function TileCard({
   title,
   tile,
@@ -250,7 +256,7 @@ function TileCard({
   return (
     <div className="card combo-card tile-missing">
       <div className="card-media">
-        <div className="card-noimg">No tile yet</div>
+        <div className="card-noimg">No photo yet</div>
       </div>
       <div className="card-content">
         <h2 className="card-title">{title}</h2>
