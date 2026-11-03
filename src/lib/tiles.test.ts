@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
-import { clayTileCounts, glazeTileCounts, glazeTileEntries, sortStudioTiles, tileEntries } from './tiles';
+import {
+  clayTileCounts,
+  glazeTileCounts,
+  glazeTileEntries,
+  sortStudioTiles,
+  tileEntries,
+  tilesForResults,
+} from './tiles';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 
@@ -108,5 +115,33 @@ describe('sortStudioTiles', () => {
       'Craft Crank/reduction',
       'Paper Clay/reduction',
     ]);
+  });
+});
+
+describe('tilesForResults', () => {
+  const tile = (clay: string, firing: Firing) => post(clay, [glaze('Matt Transparent')], firing, true, '2026-10-01');
+  const tiles = [
+    tile('Vulcan Coarse Black', 'oxidation'),
+    tile('Sibelco Black', 'reduction'),
+    tile('White Grogged', 'oxidation'),
+  ];
+  const clays = (r: { clays: { name: string }[] }) => r.clays[0].name;
+
+  it('puts tiles on the same clay first, then the same kiln', () => {
+    const mark = post('Sibelco Black', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
+    const { tiles: order, missing } = tilesForResults(tiles, [mark]);
+    expect(order.map((t) => `${clays(t)}/${t.firing}`)).toEqual([
+      'Sibelco Black/reduction',
+      'Vulcan Coarse Black/oxidation',
+      'White Grogged/oxidation',
+    ]);
+    expect(missing).toEqual([]);
+  });
+
+  it('names the clays that have no tile', () => {
+    const mark = post('sibelco black', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
+    const { tiles: order, missing } = tilesForResults(tiles.slice(0, 1).concat(tiles.slice(2)), [mark]);
+    expect(order.map(clays)).toEqual(['Vulcan Coarse Black', 'White Grogged']);
+    expect(missing).toEqual(['sibelco black']);
   });
 });

@@ -140,3 +140,22 @@ export function sortStudioTiles<T extends { clays: ClayPart[]; firing: Firing }>
       kiln(a) - kiln(b),
   );
 }
+
+/**
+ * A combo's studio tiles with the ones most like the results being looked at
+ * first: same clay and kiln, then same clay, then same kiln. Also the clays of
+ * those results that have no tile, to say so (a tile on another clay isn't theirs).
+ */
+export function tilesForResults<T extends { clays: ClayPart[]; firing: Firing }>(
+  tiles: T[],
+  results: { clays: ClayPart[]; firing: Firing }[],
+): { tiles: T[]; missing: string[] } {
+  const wanted = clayNames(results.flatMap((r) => r.clays));
+  const kilns = new Set(results.map((r) => r.firing));
+  const onClay = (t: T, clay: string) => clayNames(t.clays).some((c) => normName(c) === normName(clay));
+  const rank = (t: T) => (wanted.some((c) => onClay(t, c)) ? 0 : 2) + (kilns.has(t.firing) ? 0 : 1);
+  return {
+    tiles: [...tiles].sort((a, b) => rank(a) - rank(b)),
+    missing: wanted.filter((c) => !tiles.some((t) => onClay(t, c))),
+  };
+}
