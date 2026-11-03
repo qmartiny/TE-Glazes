@@ -140,3 +140,20 @@ export function sortStudioTiles<T extends { clays: ClayPart[]; firing: Firing }>
       kiln(a) - kiln(b),
   );
 }
+
+/**
+ * The studio tiles that go with the results being looked at: only those on the
+ * same clay (same kiln first), since a tile on another clay isn't theirs. With no
+ * results to go by, all of them.
+ */
+export function tilesForResults<T extends { clays: ClayPart[]; firing: Firing }>(
+  tiles: T[],
+  results: { clays: ClayPart[]; firing: Firing }[],
+): T[] {
+  if (!results.length) return tiles;
+  const wanted = clayNames(results.flatMap((r) => r.clays)).map(normName);
+  const kilns = new Set(results.map((r) => r.firing));
+  return tiles
+    .filter((t) => clayNames(t.clays).some((c) => wanted.includes(normName(c))))
+    .sort((a, b) => Number(!kilns.has(a.firing)) - Number(!kilns.has(b.firing)));
+}

@@ -15,7 +15,7 @@ import { partsLabel } from '../lib/clays';
 import { formatDate } from '../lib/format';
 import { comboKey, isStudioMaterial, LAYER_TYPES, layerLabel, layerTypeInfo } from '../lib/layers';
 import { invalidateResults, useResults } from '../lib/results';
-import { canBeStudioTile, sortStudioTiles } from '../lib/tiles';
+import { canBeStudioTile, sortStudioTiles, tilesForResults } from '../lib/tiles';
 import { errorMessage, useAsync } from '../lib/useAsync';
 import type { ClayPart, Combo, ComboFilters, Layer } from '../types';
 import { NotFoundPage } from './NotFoundPage';
@@ -78,6 +78,9 @@ export function ComboPage() {
     CLAYS,
   );
   const memberResults = group.results.filter((r) => !r.official);
+  // Only the studio tiles on the clay of the result you came to (or of all of them): one on another clay isn't theirs.
+  const focus = memberResults.find((r) => r.id === id);
+  const relatedTiles = tilesForResults(studioTiles, focus ? [focus] : memberResults);
   const people = new Set(memberResults.map((r) => r.userId)).size;
   // Opened from Test tiles or a glaze's page. Members' results with the glaze are on the glaze's page.
   const tileView = !!id && canBeStudioTile(group.layers) && studioTiles.some((t) => t.id === id);
@@ -89,7 +92,7 @@ export function ComboPage() {
   const byline = [
     memberResults.length &&
       `${memberResults.length} ${memberResults.length === 1 ? 'result' : 'results'} from ${people} ${people === 1 ? 'member' : 'members'}`,
-    studioTiles.length && `${studioTiles.length} studio test ${studioTiles.length === 1 ? 'tile' : 'tiles'}`,
+    relatedTiles.length && `${relatedTiles.length} studio test ${relatedTiles.length === 1 ? 'tile' : 'tiles'}`,
   ]
     .filter(Boolean)
     .join(' · ');
@@ -237,14 +240,32 @@ export function ComboPage() {
   // One layer needs no numbering or order.
   const single = group.layers.length === 1;
 
+  // Photos first, then the glazes, then the studio's tiles of the glaze.
   return (
     <article className="combo-group">
-      <div className="combo-overview">
-        <header>
-          <h1 className="page-title">{title}</h1>
-          <p className="byline">{byline}</p>
-        </header>
+      <header>
+        <h1 className="page-title">{title}</h1>
+        <p className="byline">{byline}</p>
+      </header>
 
+      <section className="results" aria-label="Results">
+        {full.error && <p className="form-error">Couldn't load the results: {full.error}</p>}
+        {full.loading && !full.data && <div className="spinner" aria-label="Loading" />}
+        {combos.map((combo) => (
+          <ResultBlock
+            key={combo.id}
+            combo={combo}
+            highlighted={combo.id === id && memberResults.length > 1}
+            isOwner={user?.id === combo.userId}
+            canRemove={canRemove(combo)}
+            onDelete={() => setDeleting(combo)}
+            onMove={canMove(combo) ? () => onMove(combo) : undefined}
+            moving={moving}
+          />
+        ))}
+      </section>
+
+      <div className="combo-overview">
         <section aria-labelledby="layers-h">
           <h2 id="layers-h" className="section-title">
             {single ? layerTypeInfo(group.layers[0].type).label : sectionTitle(group.layers)}
@@ -285,34 +306,14 @@ export function ComboPage() {
         </div>
       </div>
 
-      <section className="results" aria-label="Results">
-        {full.error && <p className="form-error">Couldn't load the results: {full.error}</p>}
-        {studioTiles.length > 0 && (
-          <div className="studio-tiles">
-            <h2 className="section-title">Studio test tiles</h2>
-            <TileStrip tiles={studioTiles} />
-          </div>
-        )}
-        {memberResults.length > 0 && (
-          <h2 className="section-title">
-            {memberResults.length === 1 ? 'Result' : 'Results'}
-            {studioTiles.length > 0 && <span className="section-hint"> from members</span>}
+      {relatedTiles.length > 0 && (
+        <section className="studio-tiles" aria-labelledby="tiles-h">
+          <h2 id="tiles-h" className="section-title">
+            Studio test tiles
           </h2>
-        )}
-        {full.loading && !full.data && <div className="spinner" aria-label="Loading" />}
-        {combos.map((combo) => (
-          <ResultBlock
-            key={combo.id}
-            combo={combo}
-            highlighted={combo.id === id && memberResults.length > 1}
-            isOwner={user?.id === combo.userId}
-            canRemove={canRemove(combo)}
-            onDelete={() => setDeleting(combo)}
-            onMove={canMove(combo) ? () => onMove(combo) : undefined}
-            moving={moving}
-          />
-        ))}
-      </section>
+          <TileStrip tiles={relatedTiles} />
+        </section>
+      )}
 
       {dialog}
     </article>

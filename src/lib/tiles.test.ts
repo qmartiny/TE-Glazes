@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import type { Firing, Layer, ResultSummary } from '../types';
-import { clayTileCounts, glazeTileCounts, glazeTileEntries, sortStudioTiles, tileEntries } from './tiles';
+import {
+  clayTileCounts,
+  glazeTileCounts,
+  glazeTileEntries,
+  sortStudioTiles,
+  tileEntries,
+  tilesForResults,
+} from './tiles';
 
 const glaze = (name: string): Layer => ({ type: 'glaze', name, application: null });
 
@@ -108,5 +115,36 @@ describe('sortStudioTiles', () => {
       'Craft Crank/reduction',
       'Paper Clay/reduction',
     ]);
+  });
+});
+
+describe('tilesForResults', () => {
+  const tile = (clay: string, firing: Firing) => post(clay, [glaze('Matt Transparent')], firing, true, '2026-10-01');
+  const tiles = [
+    tile('Vulcan Coarse Black', 'oxidation'),
+    tile('Sibelco Black', 'reduction'),
+    tile('Sibelco Black', 'oxidation'),
+    tile('White Grogged', 'oxidation'),
+  ];
+  const label = (t: ResultSummary) => `${t.clays[0].name}/${t.firing}`;
+
+  it('keeps only the tiles on the same clay, same kiln first', () => {
+    const mark = post('Sibelco Black', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
+    expect(tilesForResults(tiles, [mark]).map(label)).toEqual(['Sibelco Black/oxidation', 'Sibelco Black/reduction']);
+  });
+
+  it('shows none when the clay has no tile', () => {
+    const mark = post('Porcelain', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01');
+    expect(tilesForResults(tiles, [mark])).toEqual([]);
+  });
+
+  it('matches any clay of a mix, and keeps all with no results to go by', () => {
+    const mix = { ...post('x', [glaze('Matt Transparent')], 'oxidation', false, '2026-11-01') };
+    mix.clays = [
+      { name: 'Reclaim', percent: 50 },
+      { name: 'white grogged', percent: 50 },
+    ];
+    expect(tilesForResults(tiles, [mix]).map(label)).toEqual(['White Grogged/oxidation']);
+    expect(tilesForResults(tiles, [])).toHaveLength(4);
   });
 });
